@@ -1,0 +1,30 @@
+Package: buscadoR
+Type: Package
+Title: What the Package Does (Title Case)
+Version: 0.1.0
+Author: Who wrote it
+Maintainer: The package maintainer <yourself@somewhere.net>
+Description: More about what it does (maybe more than one line)
+    Use four spaces when indenting paragraphs within the Description.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Imports: 
+    Biostrings (>= 2.62.0),
+    dplyr,
+    httr,
+    magrittr,
+    pfamscanr (>= 0.1.9999),
+    rBLAST (>= 0.99.2),
+    readr,
+    seqinr,
+    stringr,
+    tidyr,
+    xml2
+RoxygenNote: 7.1.2
+Remotes: 
+    TeamMacLean/pfamscanr,
+    bioc::release/Biostrings,
+    mhahsler/rBLAST
+Depends: 
+    R (>= 3.5)
