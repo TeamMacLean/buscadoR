@@ -68,9 +68,10 @@ get_pfam <- function(file, email, progress = FALSE) {
          call. = FALSE
     )
   }
+  tmppfam <- tempdir()
   file_list <- split_fasta(
     path_in = file_name,
-    path_out = "temp_pfam_",
+    path_out = tmppfam,
     num_seq = 100 #max pfam allows
   )
   len <- length(file_list)

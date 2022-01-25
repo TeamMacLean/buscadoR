@@ -96,9 +96,9 @@ buscar <- function(file_path, quiet=TRUE, email = NULL, pfam_eval_cutoff=1e-6, b
     dplyr::distinct()
 
   ## find the ectos
-  ectos <- searches$ecto %>%
+  ecto <- searches$ecto %>%
     dplyr::filter(E < blast_cut_off) %>%
-    tidyr::unite(hit_coord, S.start:S.end, sep="-")
+    tidyr::unite(hit_coord, S.start:S.end, sep="-", remove=FALSE)
 
 
   ## get the lrr_rp class
@@ -114,6 +114,10 @@ buscar <- function(file_path, quiet=TRUE, email = NULL, pfam_eval_cutoff=1e-6, b
      dplyr::distinct() %>%
      condense() %>%
      dplyr::rename(kinase_pfams_hit = pfams_hit, kinase_pfams_acc = pfams_acc, kinase_pfams_loc = pfams_loc)
+
+  # remove the lrr_rps that became the lrr_rks from the lrr_rp object
+  searches$lrr_rp <- searches$lrr_rp %>%
+    dplyr::filter(! Name %in% searches$lrr_rp_with_rk)
 
 
   # get the non_lrr_rp class
@@ -132,6 +136,10 @@ buscar <- function(file_path, quiet=TRUE, email = NULL, pfam_eval_cutoff=1e-6, b
      condense() %>%
      dplyr::rename(non_lrr_rp_with_rk_pfams_hit = pfams_hit, non_lrr_rp__with_rk_pfams_acc = pfams_acc, non_lrr_rp__with_pfams_loc = pfams_loc)
 
+    ## remove the non_lrr_rp that became non_lrr_rk
+   searches$non_lrr_rp <- searches$non_lrr_rp %>%
+     dplyr::filter(! Name %in% searches$non_lrr_rp_with_rk)
+
   # get the ecto domain class
    phobius_pfam_ecto <- dplyr::left_join(phobius_pfam, ecto, by = c("Name" = "SubjectID") ) %>%
      dplyr::distinct()
@@ -140,6 +148,7 @@ buscar <- function(file_path, quiet=TRUE, email = NULL, pfam_eval_cutoff=1e-6, b
      dplyr::filter( Name %in% c(searches$lrr_rp$Name, searches$lrr_rp_with_rk),
                     Perc.Ident > 50, S.start > cut_site, S.start < tm_start
                     ) %>%
+     tidyr::unite(pfam_coord, seq_from:seq_to, sep="-") %>%
      dplyr::distinct() %>%
      dplyr::group_by(Name) %>%
      dplyr::summarise(

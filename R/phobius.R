@@ -102,9 +102,10 @@ get_phobius.character <- function(data, progress = FALSE, ...) {
          call. = FALSE
     )
   }
+  tmp_phob <- tempdir()
   file_list <- split_fasta(
     path_in = file_name,
-    path_out = "temp_phob_",
+    path_out = tmp_phob,
     num_seq = 500
   )
   len <- length(file_list)
