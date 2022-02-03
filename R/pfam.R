@@ -33,7 +33,7 @@
 
 
 
-get_pfam <- function(file, email, progress = FALSE) {
+get_pfam <- function(file, email, progress = FALSE,eval=20) {
   if (missing(progress)) {
     progress <- FALSE
   }
@@ -92,16 +92,20 @@ get_pfam <- function(file, email, progress = FALSE) {
     if (progress){
       r <- pfamscanr::pfamscan(
         fasta_str,
-        email
+        email,
+        evalue=eval
       ) } else {
         r <- suppressMessages(
           pfamscanr::pfamscan(
             fasta_str,
-            email
+            email,
+            evalue = eval
           )
         )
       }
-
+    if (is.null(r) ){
+      stop("PFAMScan failed")
+    }
     collected_res[[i]] <- data.frame(
       seq_name = r$seq$name,
       hit = r$name,

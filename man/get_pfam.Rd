@@ -7,7 +7,7 @@
 \url{https://www.ebi.ac.uk/Tools/common/tools/help/index.html}
 }
 \usage{
-get_pfam(file, email, progress = FALSE)
+get_pfam(file, email, progress = FALSE, eval = 20)
 }
 \arguments{
 \item{file}{A character file path of FASTA protein amino acid sequences a}
