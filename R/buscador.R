@@ -228,6 +228,31 @@ ecto_results <- function(b) {
 }
 
 #' @export
+lrr_rp <- function(b) {
+  b$lrr_rp
+}
+
+#' @export
+lrr_rk <- function(b) {
+  b$lrr_rk
+}
+
+#' @export
+non_lrr_rp <- function(b) {
+  b$non_lrr_rp
+}
+
+#' @export
+non_lrr_rk <- function(b) {
+  b$non_lrr_rk
+}
+
+#' @export
+lrr_rp_rk_with_ecto <- function(b) {
+  b$lrr_rp_rk_with_ecto
+}
+
+#' @export
 as.drawProteins <- function(b, which="lrr_rp") {
 
   seq_df <- seq_to_df(b) %>%

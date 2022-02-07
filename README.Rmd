@@ -1,0 +1,115 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# buscadoR
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+The goal of buscadoR is to find plant receptor proteins from provided FASTA sequence. It uses the web API of PFAM and phobius and a local BLAST to find repeat, transmembrane and ecto- domains, signal peptides then applies a heuristic to classify into receptor classes.
+
+## Installation
+
+You can install the development version of buscadoR from [GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("TeamMacLean/buscadoR")
+```
+
+## Performing the web search
+
+Use the `buscar` function to perform the searches, the only two required parameters are the FASTA file path and a valid email address that you have access to.
+
+```{r example}
+library(buscadoR)
+file_path <- "true_positive.fa"
+searches <- buscar(file_path, email="my_name@my.org")
+```
+
+If you want a progress bar in an interactive session
+
+```{r, eval=FALSE}
+searches <- buscar(file_path, email="my_name@my.org", progress=TRUE)
+```
+
+
+## Examining the results
+
+A summary table of each type found can be generated
+
+```{r}
+mesa(searches)
+```
+
+A dataframe of one row per protein (ideal for exporting) can be created
+
+```{r}
+as.data.frame(searches)
+```
+
+Tidy format dataframe of each type of receptor protein can be extracted 
+
+```{r}
+lrr_rp(searches)
+#also lrr_rk(), non_lrr_rp(), non_lrr_rk(), lrr_rp_rk_with_ecto()
+```
+
+Raw search results from the databases can be extracted
+
+```{r}
+pfam_results(searches)
+#also phobius_results(), ecto_results()
+```
+
+Each set of found proteins can be rendered as a plot
+
+```{r}
+dibujar(searches, which = "lrr_rp")
+#also use "lrr_rk", "non_lrr_rp", "non_lrr_rk", "lrr_rp_rk_with_ecto"
+```
+
+## Exporting results
+
+A dataframe of one row per protein can be created and written out in the usual way
+
+```{r, eval=FALSE}
+res <- as.data.frame(searches)
+readr::write_csv(res, "my_results.csv")
+```
+
+Annotated FASTA sequences can be exported
+
+```{r, eval=FALSE}
+write_seqs(searches, "my_seqs.fa")
+```
+
+## Other
+
+A dataframe compatible with the `drawProteins` package [here on bioconductor](https://bioconductor.org/packages/release/bioc/vignettes/drawProteins/inst/doc/drawProteins_BiocStyle.html) can be created for further plotting work.
+
+```{r, eval=FALSE}
+dp <- as.drawProteins(searches)
+```
+
+Note the plot is a `ggplot2` object and can be styled using that package too. 
+
+The definitions used for the classification can be returned
+
+```{r}
+definiciones(which="lrr_rp")
+#also use "lrr_rk", "non_lrr_rp", "non_lrr_rk", "lrr_rp_rk_with_ecto", "all"
+```
+
