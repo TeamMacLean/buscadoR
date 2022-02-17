@@ -16,6 +16,8 @@ get_pfam(file, email, progress = FALSE, eval = 20)
 
 \item{progress}{Boolean, whether to show the progress bar, at default set to
 FALSE.}
+
+\item{eval}{PFAM hit eval cutoff}
 }
 \value{
 A data frame with columns:

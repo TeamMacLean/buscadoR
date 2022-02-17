@@ -1,3 +1,7 @@
+#' Run BLASTP using protein file as database and ectodomains as query
+#'
+#' @param file protein fasta file
+#' @param progress show a progress bar
 #' @export
 get_ecto <- function(file, progress = FALSE) {
 
@@ -54,8 +58,8 @@ get_ecto <- function(file, progress = FALSE) {
     utils::setTxtProgressBar(pb, 2)
   }
 
-  load("data/ecto_dom_seqs.rda")
-  res <- predict(db, ecto_dom_seqs)
+  #load("data/ecto_dom_seqs.rda")
+  res <- stats::predict(db, ecto_dom_seqs)
   if (progress) {
     utils::setTxtProgressBar(pb, 4)
   }

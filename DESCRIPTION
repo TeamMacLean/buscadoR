@@ -13,11 +13,15 @@ Imports:
     Biostrings (>= 2.62.0),
     dplyr,
     drawProteins,
+    ggplot2,
     httr,
+    knitr,
     magrittr,
+    methods,
     pfamscanr (>= 0.1.9999),
     rBLAST (>= 0.99.2),
     readr,
+    rlang,
     seqinr,
     stringr,
     tidyr,
@@ -27,5 +31,5 @@ Remotes:
     TeamMacLean/pfamscanr,
     mhahsler/rBLAST
 Depends: 
-    R (>= 4.1)
+    R (>= 4.1.0)
 biocViews:

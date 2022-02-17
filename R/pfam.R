@@ -4,6 +4,7 @@
 #' @param progress Boolean, whether to show the progress bar, at default set to
 #' FALSE.
 #' @param email Character, a valid user email address, needed for PFAMscan use
+#' @param eval PFAM hit eval cutoff
 #' @return  A data frame with columns:
 #' \describe{
 #' \item{seq_name}{Character, name of the submitted sequence.}
@@ -33,7 +34,7 @@
 
 
 
-get_pfam <- function(file, email, progress = FALSE,eval=20) {
+get_pfam <- function(file, email, progress = FALSE, eval=20) {
   if (missing(progress)) {
     progress <- FALSE
   }
