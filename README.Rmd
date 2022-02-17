@@ -16,6 +16,7 @@ knitr::opts_chunk$set(
 # buscadoR
 
 <!-- badges: start -->
+[![R-CMD-check](https://github.com/TeamMacLean/buscadoR/workflows/R-CMD-check/badge.svg)](https://github.com/TeamMacLean/buscadoR/actions)
 <!-- badges: end -->
 
 The goal of buscadoR is to find plant receptor proteins from provided FASTA sequence. It uses the web API of PFAM and phobius and a local BLAST to find repeat, transmembrane and ecto- domains, signal peptides then applies a heuristic to classify into receptor classes.

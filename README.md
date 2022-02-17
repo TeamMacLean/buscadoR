@@ -4,6 +4,8 @@
 # buscadoR
 
 <!-- badges: start -->
+
+[![R-CMD-check](https://github.com/TeamMacLean/buscadoR/workflows/R-CMD-check/badge.svg)](https://github.com/TeamMacLean/buscadoR/actions)
 <!-- badges: end -->
 
 The goal of buscadoR is to find plant receptor proteins from provided
