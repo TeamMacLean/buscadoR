@@ -36,9 +36,6 @@ A data frame with columns:
 \description{
 Query PFAM web server.
 }
-\note{
-This function creates temporary files in the working directory.
-}
 \references{
 Madeira F, Park YM, Lee J, et al. The EMBL-EBI search and sequence analysis
 tools APIs in 2019. Nucleic Acids Research. 2019 Jul;47(W1):W636-W641.

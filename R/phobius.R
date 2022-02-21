@@ -393,3 +393,32 @@ get_phobius.default <- function(data = NULL,
   )
   return(res)
 }
+
+#' filter and reformat raw phobius result
+#'
+#' keeps only Phobius hits with one TM and returns dataframe
+#'
+#' @param pr phobius result dataframe from `get_phobius()`
+#' @return dataframe
+#' @importFrom rlang .data
+process_phobius <- function(pr) {
+
+  tmp <- pr %>% dplyr::filter(.data$is.phobius == TRUE, .data$tm == 1)
+
+    if (nrow(tmp) == 0){
+      return(data.frame("Name" = character(), "cut_site"=numeric(),
+                        "tm_start"=numeric(), "tm_end"=numeric())
+             )
+    }
+
+    tmp %>% dplyr::mutate(
+      tm_start = as.numeric( stringr::str_split(
+        stringr::str_split(.data$prediction, "[oi]", simplify = TRUE)[,2],
+        "-", simplify=TRUE)[,1] ) ,
+      tm_end = as.numeric( stringr::str_split(
+        stringr::str_split(.$prediction, "[oi]", simplify = TRUE)[,2],
+        "-", simplify=TRUE)[,2] ),
+    ) %>%
+    dplyr::select(.data$Name, .data$cut_site, .data$tm_start, .data$tm_end) %>%
+    dplyr::distinct()
+}

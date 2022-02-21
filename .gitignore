@@ -6,3 +6,4 @@
 renv/*
 *.fa
 *.fasta
+.Rprofile

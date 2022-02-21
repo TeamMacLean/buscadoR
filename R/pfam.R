@@ -19,7 +19,6 @@
 #' }
 #'
 #'
-#' @note This function creates temporary files in the working directory.
 #'
 #' @source \url{https://www.ebi.ac.uk/Tools/common/tools/help/index.html}
 #'
@@ -135,5 +134,22 @@ get_pfam <- function(file, email, progress = FALSE, eval=20) {
   return(collected_res)
 }
 
+#' process raw pfam result into dataframe
+#'
+#' @param pr PFAM result from `get_pfam()`
+#' @return dataframe
+#' @importFrom rlang .data
+process_pfam <- function(pr,pfam_eval) {
+  pr %>%
+  dplyr::filter(.data$eval < pfam_eval) %>%
+    dplyr::mutate(base_acc = substr(.data$acc, 1,7 ),
+                  seq_to = as.numeric(.data$seq_to),
+                  seq_from = as.numeric(.data$seq_from),
+                  b_type = dplyr::if_else(.data$base_acc %in% lrr_pfams, "LRR_PFAM",
+                                          dplyr::if_else(.data$base_acc %in% non_lrr_pfams, "NON_LRR_PFAM",
+                                                         dplyr::if_else(.data$base_acc %in% kinase_pfams, "KINASE_PFAM", "Other"))),
+                  pfam_length = .data$seq_to - .data$seq_from
+    ) %>%
+    dplyr::distinct()
 
-
+}

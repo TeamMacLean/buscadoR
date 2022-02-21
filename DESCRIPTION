@@ -33,3 +33,8 @@ Remotes:
 Depends: 
     R (>= 4.1.0)
 biocViews:
+Suggests: 
+    digest,
+    RCurl,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3

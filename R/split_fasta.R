@@ -113,7 +113,7 @@ split_fasta <- function(path_in,
              are unique")
   }
   if (!all(name == make.names(name))) {
-    warning("Sequence names contain special characters, this can cause
+    message("Sequence names contain special characters, this can cause
                 problems in downstream functions.")
   }
   if (!missing(trunc)) {

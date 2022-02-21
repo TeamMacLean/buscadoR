@@ -49,7 +49,8 @@ get_ecto <- function(file, progress = FALSE) {
     )
   }
 
-  db_dir <- tempdir()
+  db_dir <- paste0(tempdir(), "/", digest::digest(date()), "/" )
+  dir.create(db_dir)
   db_file <- paste0(db_dir, "/", basename(file))
   file.copy(file, db_dir)
   rBLAST::makeblastdb(db_file, dbtype="prot")
@@ -57,13 +58,12 @@ get_ecto <- function(file, progress = FALSE) {
   if (progress) {
     utils::setTxtProgressBar(pb, 2)
   }
-
   #load("data/ecto_dom_seqs.rda")
   res <- stats::predict(db, ecto_dom_seqs)
   if (progress) {
     utils::setTxtProgressBar(pb, 4)
   }
-
+  unlink(db_dir, recursive = TRUE)
 
 
   if (progress) {

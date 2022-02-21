@@ -203,36 +203,19 @@ do_searches <- function(file_path, progress=FALSE, email=NULL, pfam_eval=20, bla
   if (progress) message("Starting phobius search")
 
   result$phobius <- get_phobius(file_path, progress=progress) %>%
-    dplyr::filter(.data$is.phobius == TRUE, .data$tm == 1) %>%
-    dplyr::mutate(
-      tm_start = as.numeric( stringr::str_split(
-        stringr::str_split(.data$prediction, "[oi]", simplify = TRUE)[,2],
-        "-", simplify=TRUE)[,1] ) ,
-      tm_end = as.numeric( stringr::str_split(
-        stringr::str_split(.data$prediction, "[oi]", simplify = TRUE)[,2],
-        "-", simplify=TRUE)[,2] ),
-    ) %>%
-    dplyr::select(.data$Name, .data$cut_site, .data$tm_start, .data$tm_end) %>%
-    dplyr::distinct()
+    process_phobius()
 
   if (progress) message(paste("Phobius complete, found", length(result$phobius$Name), "proteins with Signal Peptide and single TM domain\n"))
 
   if (progress) message("Starting PFAM with found proteins")
 
   filtered_protein_tmpfile <- keep_phobius_hits(result$phobius, file_path)
+
   result$pfam <- get_pfam(filtered_protein_tmpfile, email, progress=progress, eval=pfam_eval) %>%
-    dplyr::filter(.data$eval < .data$pfam_eval) %>%
-    dplyr::mutate(base_acc = substr(.data$acc, 1,7 ),
-                  seq_to = as.numeric(.data$seq_to),
-                  seq_from = as.numeric(.data$seq_from),
-                  b_type = dplyr::if_else(.data$base_acc %in% lrr_pfams, "LRR_PFAM",
-                                          dplyr::if_else(.data$base_acc %in% non_lrr_pfams, "NON_LRR_PFAM",
-                                                         dplyr::if_else(.data$base_acc %in% kinase_pfams, "KINASE_PFAM", "Other"))),
-                  pfam_length = .data$seq_to - .data$seq_from
-    ) %>%
-    dplyr::distinct()
+    process_pfam(pfam_eval)
 
   if (progress) message("PFAM complete\nStarting BLAST for ectodomains with found proteins\n")
+
   result$ecto <- get_ecto(file_path, progress=progress) %>%
     dplyr::filter(.data$E < blast_eval) %>%
     tidyr::unite(.data$hit_coord, .data$S.start:.data$S.end, sep="-", remove=FALSE)
