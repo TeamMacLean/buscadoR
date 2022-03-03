@@ -33,7 +33,8 @@
 
 
 
-get_pfam <- function(file, email, progress = FALSE, eval=20) {
+get_pfam <- function(file, email, progress = FALSE, eval=20, maxchecktime=120, wait=10) {
+
   if (missing(progress)) {
     progress <- FALSE
   }
@@ -93,18 +94,22 @@ get_pfam <- function(file, email, progress = FALSE, eval=20) {
       r <- pfamscanr::pfamscan(
         fasta_str,
         email,
-        evalue=eval
+        evalue=eval,
+        maxchecktime = maxchecktime,
+        wait = wait
       ) } else {
         r <- suppressMessages(
           pfamscanr::pfamscan(
             fasta_str,
             email,
-            evalue = eval
+            evalue = eval,
+            maxchecktime = maxchecktime,
+            wait = wait
           )
         )
       }
     if (is.null(r) ){
-      stop("PFAMScan failed")
+      stop("PFAMScan failed, null obtained from PFAM. This is most likely due to a timeout, please try increasing 'wait' and 'maxchecktime' ")
     }
     collected_res[[i]] <- data.frame(
       seq_name = r$seq$name,

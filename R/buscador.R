@@ -66,15 +66,16 @@ definiciones <- function(which="all") {
 #' @param email a valid email address
 #' @param pfam_eval_cutoff exclude pfam hits with eval over this value (20)
 #' @param blast_eval_cutoff exclude blast hits with eval over this value (1e-6)
-#' @param ... other arguments for internet search functions - not yet implemented
+#' @param wait seconds to wait between PFAM checks (5)
+#' @param maxchecktime seconds to stop checking PFAM and abort (120)
 #' @return list of tidy dataframes of each type of receptor and its Phobius, PFAM and BLAST hits, class 'busco'
 #' @export
 #' @importFrom rlang .data
-buscar <- function(file_path, progress=FALSE, email = NULL, pfam_eval_cutoff=20, blast_eval_cutoff=1e-6, ...){
+buscar <- function(file_path, progress=FALSE, email = NULL, pfam_eval_cutoff=20, blast_eval_cutoff=1e-6, wait=5, maxchecktime=120){
 
   #load("data/pfam_data.rda")
   searches <- do_searches(file_path, progress, email,
-                          pfam_eval=pfam_eval_cutoff, blast_eval=blast_eval_cutoff, ...)
+                          pfam_eval=pfam_eval_cutoff, blast_eval=blast_eval_cutoff, wait=wait, maxchecktime=maxchecktime)
 
 
   searches$file_path <- file_path
@@ -128,7 +129,7 @@ buscar <- function(file_path, progress=FALSE, email = NULL, pfam_eval_cutoff=20,
      dplyr::filter( .data$Name %in% c(searches$lrr_rp$Name, searches$lrr_rk),
                     .data$Perc.Ident > 50, .data$S.start > .data$cut_site, .data$S.start < .data$tm_start
                     ) %>%
-     tidyr::unite(.data$pfam_coord, .data$seq_from:.data$seq_to, sep="-", remove=FALSE)
+     tidyr::unite(pfam_coord, .data$seq_from:.data$seq_to, sep="-", remove=FALSE)
 
   class(searches) <- "busco"
   return(searches)
@@ -141,7 +142,7 @@ buscar <- function(file_path, progress=FALSE, email = NULL, pfam_eval_cutoff=20,
 #' @importFrom rlang .data
 condense <- function(df) {
   df %>%
-    tidyr::unite(.data$pfam_coord, .data$seq_from:.data$seq_to, sep="-") %>%
+    tidyr::unite(pfam_coord, .data$seq_from:.data$seq_to, sep="-") %>%
     dplyr::distinct() %>%
     dplyr::group_by(.data$Name) %>%
     dplyr::summarise(
@@ -190,9 +191,11 @@ mesa <- function(b){
 #' @param email a valid email address
 #' @param pfam_eval exclude pfam hits with eval over this value (20)
 #' @param blast_eval exclude blast hits with eval over this value (1e-6)
+#' @param wait seconds to wait between PFAM checks (5)
+#' @param maxchecktime seconds to stop checking PFAM and abort (360)
 #' @return list of dataframes of search results
 #' @importFrom rlang .data
-do_searches <- function(file_path, progress=FALSE, email=NULL, pfam_eval=20, blast_eval=1e-6){
+do_searches <- function(file_path, progress=FALSE, email=NULL, pfam_eval=20, blast_eval=1e-6,wait=5, maxchecktime=120){
 
   result <- list(
     phobius = NULL,
@@ -211,14 +214,14 @@ do_searches <- function(file_path, progress=FALSE, email=NULL, pfam_eval=20, bla
 
   filtered_protein_tmpfile <- keep_phobius_hits(result$phobius, file_path)
 
-  result$pfam <- get_pfam(filtered_protein_tmpfile, email, progress=progress, eval=pfam_eval) %>%
+  result$pfam <- get_pfam(filtered_protein_tmpfile, email, progress=progress, eval=pfam_eval, wait=wait, maxchecktime = maxchecktime) %>%
     process_pfam(pfam_eval)
 
   if (progress) message("PFAM complete\nStarting BLAST for ectodomains with found proteins\n")
 
   result$ecto <- get_ecto(file_path, progress=progress) %>%
     dplyr::filter(.data$E < blast_eval) %>%
-    tidyr::unite(.data$hit_coord, .data$S.start:.data$S.end, sep="-", remove=FALSE)
+    tidyr::unite(hit_coord, .data$S.start:.data$S.end, sep="-", remove=FALSE)
 
   return(result)
 }

@@ -9,7 +9,9 @@ do_searches(
   progress = FALSE,
   email = NULL,
   pfam_eval = 20,
-  blast_eval = 1e-06
+  blast_eval = 1e-06,
+  wait = 5,
+  maxchecktime = 120
 )
 }
 \arguments{
@@ -22,6 +24,10 @@ do_searches(
 \item{pfam_eval}{exclude pfam hits with eval over this value (20)}
 
 \item{blast_eval}{exclude blast hits with eval over this value (1e-6)}
+
+\item{wait}{seconds to wait between PFAM checks (5)}
+
+\item{maxchecktime}{seconds to stop checking PFAM and abort (360)}
 }
 \value{
 list of dataframes of search results

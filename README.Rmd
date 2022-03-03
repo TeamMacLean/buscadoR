@@ -47,6 +47,13 @@ searches <- buscar(file_path, email="my_name@my.org", progress=TRUE)
 ```
 
 
+And if you need to increase the amount of time the process will wait for the PFAM server before giving up. This example checks every five seconds for 5 minutes
+
+```{r,eval = FALSE}
+searches <- buscar(file_path, email="my_name@my.org", progress=TRUE,
+                   wait=5, maxchecktime=360 )
+```
+
 ## Examining the results
 
 A summary table of each type found can be generated

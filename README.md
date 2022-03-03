@@ -33,9 +33,9 @@ have access to.
 library(buscadoR)
 file_path <- "true_positive.fa"
 searches <- buscar(file_path, email="my_name@my.org")
-#> Warning in split_fasta(path_in = file_name, path_out = tmp_phob, num_seq = 500): Sequence names contain special characters, this can cause
+#> Sequence names contain special characters, this can cause
 #>                 problems in downstream functions.
-#> Warning in split_fasta(path_in = file_name, path_out = tmppfam, num_seq = 100): Sequence names contain special characters, this can cause
+#> Sequence names contain special characters, this can cause
 #>                 problems in downstream functions.
 ```
 
@@ -43,6 +43,15 @@ If you want a progress bar in an interactive session
 
 ``` r
 searches <- buscar(file_path, email="my_name@my.org", progress=TRUE)
+```
+
+And if you need to increase the amount of time the process will wait for
+the PFAM server before giving up. This example checks every five seconds
+for 5 minutes
+
+``` r
+searches <- buscar(file_path, email="my_name@my.org", progress=TRUE,
+                   wait=5, maxchecktime=360 )
 ```
 
 ## Examining the results
@@ -53,11 +62,11 @@ A summary table of each type found can be generated
 mesa(searches)
 ```
 
-| b\_type      | count |
-|:-------------|------:|
-| lrr\_rk      |     2 |
-| lrr\_rp      |     1 |
-| non\_lrr\_rp |     1 |
+| b_type     | count |
+|:-----------|------:|
+| lrr_rk     |     2 |
+| lrr_rp     |     1 |
+| non_lrr_rp |     1 |
 
 BuscadoR RLK Finding results
 
@@ -100,7 +109,7 @@ pfam_results(searches)
 #> 5  transcript_103865_-_ORF_1_(frame_3)_1_1     Pkinase PF00069.25 3.4e-45
 #> 6  transcript_102826_-_ORF_1_(frame_3)_1_1     LRRNT_2 PF08263.12 7.2e-04
 #> 7  transcript_115185_-_ORF_1_(frame_2)_1_1     Pkinase PF00069.25 9.3e-47
-#> 8  transcript_103278_-_ORF_1_(frame_3)_1_1    Malectin  PF11721.8 4.1e-40
+#> 8  transcript_103278_-_ORF_1_(frame_3)_1_1    Malectin  PF11721.8 4.0e-40
 #> 9    transcript_121308_-_ORF_1_(frame_1)_1 Pkinase_Tyr PF07714.17 9.0e-48
 #> 10   transcript_130761_-_ORF_1_(frame_2)_1       LRR_8  PF13855.6 2.7e-06
 #> 11   transcript_130761_-_ORF_1_(frame_2)_1    Malectin  PF11721.8 1.2e-42
@@ -127,7 +136,7 @@ Each set of found proteins can be rendered as a plot
 dibujar(searches, which = "lrr_rp")
 ```
 
-<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" />
 
 ``` r
 #also use "lrr_rk", "non_lrr_rp", "non_lrr_rk", "lrr_rp_rk_with_ecto"

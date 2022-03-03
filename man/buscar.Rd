@@ -10,7 +10,8 @@ buscar(
   email = NULL,
   pfam_eval_cutoff = 20,
   blast_eval_cutoff = 1e-06,
-  ...
+  wait = 5,
+  maxchecktime = 120
 )
 }
 \arguments{
@@ -24,7 +25,9 @@ buscar(
 
 \item{blast_eval_cutoff}{exclude blast hits with eval over this value (1e-6)}
 
-\item{...}{other arguments for internet search functions - not yet implemented}
+\item{wait}{seconds to wait between PFAM checks (5)}
+
+\item{maxchecktime}{seconds to stop checking PFAM and abort (120)}
 }
 \value{
 list of tidy dataframes of each type of receptor and its Phobius, PFAM and BLAST hits, class 'busco'

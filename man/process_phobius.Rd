@@ -13,5 +13,5 @@ process_phobius(pr)
 dataframe
 }
 \description{
-filter and reformat raw phobius result
+keeps only Phobius hits with one TM and returns dataframe
 }

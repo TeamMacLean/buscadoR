@@ -4,7 +4,7 @@
 \alias{process_pfam}
 \title{process raw pfam result into dataframe}
 \usage{
-process_pfam(pr)
+process_pfam(pr, pfam_eval)
 }
 \arguments{
 \item{pr}{PFAM result from `get_pfam()`}
