@@ -5,7 +5,8 @@
 \title{perform internet searches and classify given proteins into receptor types}
 \usage{
 buscar(
-  file_path,
+  protein_file = NULL,
+  restart_file = NULL,
   progress = FALSE,
   email = NULL,
   pfam_eval_cutoff = 20,
@@ -15,7 +16,9 @@ buscar(
 )
 }
 \arguments{
-\item{file_path}{path to protein fasta file}
+\item{protein_file}{path to protein fasta file (ignored if restart file has some searches). Do not use if you want to restart}
+
+\item{restart_file}{file to use as restart file, will perform the search actions and automatically save each step as you go. if file exists will be appended with new search results. search actions already performed and saved in the file will not be replaced}
 
 \item{progress}{show a progress bar as job runs (not recommended for non interactive sessions)}
 
@@ -30,7 +33,7 @@ buscar(
 \item{maxchecktime}{seconds to stop checking PFAM and abort (120)}
 }
 \value{
-list of tidy dataframes of each type of receptor and its Phobius, PFAM and BLAST hits, class 'busco'
+list of tidy dataframes of each type of receptor and its Phobius, PFAM and BLAST hits
 }
 \description{
 runs the internet search using the Phobius server, the PFAM API and local BLAST. Then collates the results

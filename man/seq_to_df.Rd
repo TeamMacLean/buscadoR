@@ -2,13 +2,13 @@
 % Please edit documentation in R/buscador.R
 \name{seq_to_df}
 \alias{seq_to_df}
-\title{load the protein fasta file in to a dataframe}
+\title{convert the aastrset to a dataframe}
 \usage{
 seq_to_df(b)
 }
 \arguments{
-\item{b}{`busco` search object returned from `buscar()`}
+\item{b}{`buscador` search object returned from `buscar()`}
 }
 \description{
-load the protein fasta file in to a dataframe
+convert the aastrset to a dataframe
 }

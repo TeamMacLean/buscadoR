@@ -16,6 +16,7 @@ Imports:
     ggplot2,
     httr,
     knitr,
+    lubridate,
     magrittr,
     methods,
     pfamscanr (>= 0.1.9999),

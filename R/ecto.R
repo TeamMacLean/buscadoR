@@ -48,6 +48,10 @@ get_ecto <- function(file, progress = FALSE) {
       style = 3
     )
   }
+  print("initial file")
+  print(file)
+
+
 
   db_dir <- paste0(tempdir(), "/", digest::digest(date()), "/" )
   dir.create(db_dir)
@@ -58,7 +62,6 @@ get_ecto <- function(file, progress = FALSE) {
   if (progress) {
     utils::setTxtProgressBar(pb, 2)
   }
-  #load("data/ecto_dom_seqs.rda")
   res <- stats::predict(db, ecto_dom_seqs)
   if (progress) {
     utils::setTxtProgressBar(pb, 4)
