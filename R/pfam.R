@@ -33,7 +33,7 @@
 
 
 
-get_pfam <- function(file, email, progress = FALSE, eval=20, maxchecktime=120, wait=10) {
+get_pfam <- function(fasta_str, email, progress = FALSE, eval=20, maxchecktime=120, wait=10) {
 
   if (missing(progress)) {
     progress <- FALSE
@@ -69,26 +69,7 @@ get_pfam <- function(file, email, progress = FALSE, eval=20, maxchecktime=120, w
          call. = FALSE
     )
   }
-  tmppfam <- tempdir()
-  file_list <- split_fasta(
-    path_in = file_name,
-    path_out = tmppfam,
-    num_seq = 100 #max pfam allows
-  )
-  len <- length(file_list)
-  if (grepl("temp_", file_name)) {
-    unlink(file_name)
-  }
-  if (progress) {
-    pb <- utils::txtProgressBar(
-      min = 0,
-      max = len,
-      style = 3
-    )
-  }
-  collected_res <- vector("list", len)
-  for (i in seq_along(len)) {
-    fasta_str <- readr::read_file(file_list[i])
+
     r <- NULL
     if (progress){
       r <- pfamscanr::pfamscan(
@@ -111,7 +92,7 @@ get_pfam <- function(file, email, progress = FALSE, eval=20, maxchecktime=120, w
     if (is.null(r) ){
       stop("PFAMScan failed, null obtained from PFAM. This is most likely due to a timeout, please try increasing 'wait' and 'maxchecktime' ")
     }
-    collected_res[[i]] <- data.frame(
+    collected_res <- data.frame(
       seq_name = r$seq$name,
       hit = r$name,
       acc = r$acc,
@@ -127,14 +108,10 @@ get_pfam <- function(file, email, progress = FALSE, eval=20, maxchecktime=120, w
     if (progress) {
       utils::setTxtProgressBar(pb, i)
     }
-  }
   if (progress) {
     close(pb)
   }
-  collected_res <- do.call(
-    rbind,
-    collected_res
-  )
+
 
   return(collected_res)
 }

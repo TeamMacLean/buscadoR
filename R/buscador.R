@@ -55,30 +55,70 @@ definiciones <- function(which="all") {
 
 }
 
+#' create the buscador object
+buscador <- function(...){
 
+
+  b <- list(...)
+
+  b$phobius = NULL
+  b$pfam = NULL
+  b$ecto = NULL
+  b$lrr_rp = NULL
+  b$lrr_rk = NULL
+  b$lrr_rp_rk_with_ecto = NULL
+  b$non_lrr_rp = NULL
+  b$non_lrr_rk = NULL
+
+  b$aastringset = Biostrings::readAAStringSet(b$protein_file)
+
+  attr(b, "class") <- "buscador"
+  b
+}
 #' perform internet searches and classify given proteins into receptor types
 #'
 #' runs the internet search using the Phobius server, the PFAM API and local BLAST. Then collates the results
 #' and classifies proteins into receptor types as defined in `definiciones()`
 #'
-#' @param file_path path to protein fasta file
+#' @param protein_file path to protein fasta file (ignored if restart file has some searches). Do not use if you want to restart
+#' @param restart_file file to use as restart file, will perform the search actions and automatically save each step as you go. if file exists will be appended with new search results. search actions already performed and saved in the file will not be replaced
 #' @param progress show a progress bar as job runs (not recommended for non interactive sessions)
 #' @param email a valid email address
 #' @param pfam_eval_cutoff exclude pfam hits with eval over this value (20)
 #' @param blast_eval_cutoff exclude blast hits with eval over this value (1e-6)
 #' @param wait seconds to wait between PFAM checks (5)
 #' @param maxchecktime seconds to stop checking PFAM and abort (120)
-#' @return list of tidy dataframes of each type of receptor and its Phobius, PFAM and BLAST hits, class 'busco'
+#' @param
+#' @return list of tidy dataframes of each type of receptor and its Phobius, PFAM and BLAST hits
 #' @export
 #' @importFrom rlang .data
-buscar <- function(file_path, progress=FALSE, email = NULL, pfam_eval_cutoff=20, blast_eval_cutoff=1e-6, wait=5, maxchecktime=120){
+buscar <- function(protein_file=NULL, restart_file=NULL, progress=FALSE, email = NULL, pfam_eval_cutoff=20, blast_eval_cutoff=1e-6, wait=5, maxchecktime=120, search_file = NULL){
 
-  #load("data/pfam_data.rda")
-  searches <- do_searches(file_path, progress, email,
-                          pfam_eval=pfam_eval_cutoff, blast_eval=blast_eval_cutoff, wait=wait, maxchecktime=maxchecktime)
+  busc <- NULL
+
+  if (!file.exists(restart_file) & file.exists(protein_file) ){ #we are starting from scratch
+   message("Restart file doesn't exist, starting from scratch")
+
+    busc <- buscador(
+      protein_file = protein_file,
+      restart_file = restart_file,
+      progress = progress,
+      email = email,
+      pfam_eval_cutoff = pfam_eval_cutoff,
+      blast_eval_cutoff = blast_eval_cutoff,
+      wait = wait,
+      maxchecktime = maxchecktime,
+      search_file = search_file
+    )
 
 
-  searches$file_path <- file_path
+  } else if ( file.exists(restart_file) ){ # we have a restart file so need to pick up
+    busc <- readRDS(restart_file)
+  } else {
+    stop("Couldn't find restart file or protein file.")
+  }
+
+  busc <- do_searches(busc)
 
 
   ## add pfam info to all passing signal and tm domain carrying proteins
@@ -131,7 +171,6 @@ buscar <- function(file_path, progress=FALSE, email = NULL, pfam_eval_cutoff=20,
                     ) %>%
      tidyr::unite(pfam_coord, .data$seq_from:.data$seq_to, sep="-", remove=FALSE)
 
-  class(searches) <- "busco"
   return(searches)
 }
 
@@ -181,65 +220,69 @@ mesa <- function(b){
 
 }
 
+totempfile <- function(aastrset) {
+  tmpfile <- tempfile(pattern = "buscador_", tmpdir = tempdir(), fileext = ".fa")
+  Biostrings::writeXStringSet(aastrset, tmpfile)
+  return(tmpfile)
+}
+
+tostr <- function(aastrset) {
+  paste0(">", names(as.character(aastrset)), "\n", as.character(aastrset) )
+}
+
 #' run searches over the internet and local BLAST.
 #'
 #' Runs searches for proteins at Phobius, PFAM and local BLAST.
 #' Reformat returned results from searches and apply basic quality filters
 #'
-#' @param file_path path to protein fasta file
-#' @param progress show a progress bar as job runs (not recommended for non interactive sessions)
-#' @param email a valid email address
-#' @param pfam_eval exclude pfam hits with eval over this value (20)
-#' @param blast_eval exclude blast hits with eval over this value (1e-6)
-#' @param wait seconds to wait between PFAM checks (5)
-#' @param maxchecktime seconds to stop checking PFAM and abort (360)
-#' @return list of dataframes of search results
+#' @param busc buscador object from `buscar`
+#' @return search populated buscador object
 #' @importFrom rlang .data
-do_searches <- function(file_path, progress=FALSE, email=NULL, pfam_eval=20, blast_eval=1e-6,wait=5, maxchecktime=120){
+do_searches <- function(busc){
 
-  result <- list(
-    phobius = NULL,
-    pfam = NULL,
-    ecto = NULL
-  )
+#TODO tostr and totempfile for search methogs
 
-  if (progress) message("Starting phobius search")
+  if( is.null(busc$phobius)){
+    if (busc$progress) message("Starting phobius search")
 
-  result$phobius <- get_phobius(file_path, progress=progress) %>%
-    process_phobius()
+    busc$phobius = get_phobius(totempfile(busc$aastringset), progress=busc$progress) %>% ##set file
+      process_phobius()
 
-  if (progress) message(paste("Phobius complete, found", length(result$phobius$Name), "proteins with Signal Peptide and single TM domain\n"))
+    busc$aastringset = busc$aastringset[busc$phobius$Name] #reduce to only proteins passing Phobius
 
-  if (progress) message("Starting PFAM with found proteins")
+      saveRDS(busc, busc$restart_file)
 
-  filtered_protein_tmpfile <- keep_phobius_hits(result$phobius, file_path)
+    if (progress) message(paste("Phobius complete, found", length(busc$phobius$Name), "proteins with Signal Peptide and single TM domain\n"))
+  } else {
+    if (progress) message(paste("Phobius result found in save file, not redoing"))
+  }
 
-  result$pfam <- get_pfam(filtered_protein_tmpfile, email, progress=progress, eval=pfam_eval, wait=wait, maxchecktime = maxchecktime) %>%
-    process_pfam(pfam_eval)
+  if ( is.null(busc$pfam)){
+    if (progress) message("Starting PFAM with found proteins")
 
-  if (progress) message("PFAM complete\nStarting BLAST for ectodomains with found proteins\n")
 
-  result$ecto <- get_ecto(file_path, progress=progress) %>%
+    busc$pfam = get_pfam(tostr(busc$aastringset), email=busc$email, progress=busc$progress, eval=busc$pfam_eval, wait=busc$wait, maxchecktime=busc$maxchecktime) %>%
+      process_pfam(busc$pfam_eval)
+
+    saveRDS(busc, busc$restart_file)
+
+  } else {
+    if (progress) meessage("PFAM result found in save file, not redoing")
+  }
+
+  if (is.null(busc$ecto)){
+
+    busc$ecto = get_ecto(totempfile(busc$aastringset), progress=busc$progress) %>%
     dplyr::filter(.data$E < blast_eval) %>%
     tidyr::unite(hit_coord, .data$S.start:.data$S.end, sep="-", remove=FALSE)
 
-  return(result)
-}
+    saveRDS(busc, busc$restart_file)
 
-#' Extract proteins with Phobius hits from input file and return a tmpfile fasta
-#' of those proteins for subsequent searches
-#'
-#' @param df dataframe of Phobius hits
-#' @param file_path path to protein fasta file
-#' @return tmpfile path
-keep_phobius_hits <- function(df, file_path) {
-  p <- Biostrings::readAAStringSet(file_path)
-  p <- p[df$Name]
-  tmpfile <- tempfile(fileext = ".fa")
-  Biostrings::writeXStringSet(p, tmpfile)
-  return(tmpfile)
+  } else {
+    if (progress) message("Ecto domain result found in save file, not redoing")
+  }
+  return(busc)
 }
-
 
 #' get the dataframe of PFAM results from a `busco` search object from `buscar()`
 #'
@@ -315,7 +358,7 @@ lrr_rp_rk_with_ecto <- function(b) {
 #' get a dataframe of receptor type data in `drawProteins` format
 #' for pretty drawing. From a `busco` search object from `buscar()`
 #'
-#' @param b busco search object returned from `busco`
+#' @param b busco search object returned from `buscar`
 #' @param which the receptor type to return, one of 'lrr_rp', 'lrr_rk', 'non_lrr_rp', 'non_lrr_rk', 'lrr_rp_ecto'
 #' @return dataframe
 #' @export
