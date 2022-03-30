@@ -101,15 +101,15 @@ retrieve_pfam <- function(busc) {
 
   done <- sum(sapply(busc$pfam_progress, function(x) !is.null(x), simplify = TRUE))
 
-  message(paste0("Done ", done, " of ", length(busc$pfam_progress), "PFAM Submission Queries"))
+  message(paste0("Done ", done, " of ", length(busc$pfam_progress), " PFAMScan jobs at ebi.ac.uk"))
   if (done == length(busc$pfam_progress)){
     ## make the big dataframe
     res <- lapply(busc$pfam_progress, rename_pfam_cols)
     collected_res = do.call(rbind, res)
-    attr(collected_res, "status") <- "complete"
     busc$pfam = collected_res
+    attr(busc$pfam, "status") <- "complete"
   } else {
-    message(paste0("PFAM searches not complete. Please restart later."))
+    message(paste0("PFAMScan jobs not complete at ebi.ac.uk. Please restart later."))
   }
 
 

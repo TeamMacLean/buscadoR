@@ -48,8 +48,7 @@ get_ecto <- function(file, progress = FALSE) {
       style = 3
     )
   }
-  print("initial file")
-  print(file)
+
 
 
 

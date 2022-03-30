@@ -32,13 +32,30 @@ devtools::install_github("TeamMacLean/buscadoR")
 
 ## Performing the web search
 
-Use the `buscar` function to perform the searches, the only two required parameters are the FASTA file path and a valid email address that you have access to.
+To start the searches with a new protein file you need to supply a FASTA file of protein sequences, your valid email address and specify a restart filename for use later. 
 
-```{r example}
+
+```{r example, eval=FALSE}
 library(buscadoR)
-file_path <- "true_positive.fa"
-searches <- buscar(file_path, email="my_name@my.org")
+fasta_sequences <- "true_positive.fa"
+saved_progress <- "saved_progress.fa"
+searches <- buscar(protein_file = fasta_sequences, restart_file = saved_progress, email="my_name@my.org")
 ```
+
+The process will run the searches. Phobius searches are really quick. Ectodomain BLASTs are done locally. PFAM can take a while. By default, the process will wait just one second after submission is complete for PFAM before quitting and writing the progress to the `restart_file` you specified. 
+
+In simple cases with just a few (<20) proteins you may wish to wait and to run the searches and get the results in one step. 
+
+
+In most cases it is expected that the searches are done in two steps. This is the same call but only the `restart_file` is needed, the parameters are carried over from the initial job.
+You can check whether the searches have all been retrieved with `completed()` which returns `TRUE` if everything is complete. 
+
+
+```{r}
+searches <- buscar(restart_file = saved_progress)
+complete(searches)
+```
+
 
 If you want a progress bar in an interactive session
 

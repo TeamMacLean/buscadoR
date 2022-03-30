@@ -62,6 +62,7 @@ new_buscador <- function(...){
   x <- list(...)
   x['phobius'] = list(NULL)
   x['pfam'] = list(NULL)
+  x['pfam_progress'] = list(NULL)
   x['ecto'] = list(NULL)
   x['lrr_rp'] = list(NULL)
   x['lrr_rk'] = list(NULL)
@@ -88,15 +89,15 @@ new_buscador <- function(...){
 #' @param blast_eval_cutoff exclude blast hits with eval over this value (1e-6)
 #' @param wait seconds to wait between PFAM checks (5)
 #' @param maxchecktime seconds to stop checking PFAM and abort (120)
-#' @return list of tidy dataframes of each type of receptor and its Phobius, PFAM and BLAST hits
+#' @return buscador object list of tidy dataframes of each type of receptor and its Phobius, PFAM and BLAST hits
 #' @export
 #' @importFrom rlang .data
-buscar <- function(protein_file=NULL, restart_file=NULL, progress=FALSE, email = NULL, pfam_eval_cutoff=20, blast_eval_cutoff=1e-6, wait=5, maxchecktime=120){
+buscar <- function(protein_file=NULL, restart_file=NULL, progress=FALSE, email = NULL, pfam_eval_cutoff=20, blast_eval_cutoff=1e-6, wait=1, maxchecktime=1){
 
   busc <- NULL
 
-  if (!file.exists(restart_file) & file.exists(protein_file) ){ #we are starting from scratch
-   message("Restart file doesn't exist, starting from scratch")
+  if ( (!is.null(protein_file) && file.exists(protein_file))  & !file.exists(restart_file)){ #we are starting from scratch
+   message(sprintf("restart_file %s doesn't exist, interpreting this as new job with %s as input", restart_file, protein_file ))
 
     busc <- new_buscador(
       protein_file = protein_file,
@@ -111,69 +112,70 @@ buscar <- function(protein_file=NULL, restart_file=NULL, progress=FALSE, email =
 
 
   } else if ( file.exists(restart_file) ){ # we have a restart file so need to pick up
+    message(sprintf("restart_file %s found, interpreting this as a restarted job with existing protein set.", restart_file))
     busc <- readRDS(restart_file)
   } else {
-    stop("Couldn't find restart file or protein file.")
+    stop("Couldn't find restart_file or protein_file.")
   }
 
   busc <- do_searches(busc)
 
-  if (is.null(busc$phobius)) stop("Error. No phobius result.")
-  if (attr(busc$pfam, "status") != "complete" ) stop("PFAM not done. Please try a restart later.")
-  if (is.null(busc$ecto)) stop("Error. No ectodomain result")
+  if (is.null(busc$phobius)) return(sprintf("No phobius result in buscador object."))
+  if (attr(busc$pfam, "status") == "submission" ) return(sprintf("PFAMScan job not yet complete on ebi.ac.uk  Please try a restart later."))
+  if (is.null(busc$ecto)) return(sprintf("No ectodomain result in buscador object."))
 
 
   ## add pfam info to all passing signal and tm domain carrying proteins
-  phobius_pfam <- dplyr::left_join(searches$phobius, searches$pfam, by = c("Name" = "seq_name")) %>%
+  phobius_pfam <- dplyr::left_join(busc$phobius, busc$pfam, by = c("Name" = "seq_name")) %>%
     dplyr::distinct()
 
 
   ## get the lrr_rp class
-  searches$lrr_rp <- phobius_pfam %>%
+  busc$lrr_rp <- phobius_pfam %>%
     dplyr::filter(.data$b_type == "LRR_PFAM", .data$tm_start > .data$seq_to)
 
 
   # get the lrr_rk class
    lrr_rk <- phobius_pfam %>%
-     dplyr::filter(.data$Name %in% searches$lrr_rp$Name,
+     dplyr::filter(.data$Name %in% busc$lrr_rp$Name,
                    .data$b_type == "KINASE_PFAM",
                    .data$pfam_length >= 250, .data$tm_start < .data$seq_from) %>%
      dplyr::distinct()
-   rows_to_add <- dplyr::filter(searches$lrr_rp, .data$Name %in% lrr_rk$Name )
-    searches$lrr_rk <- dplyr::bind_rows(rows_to_add, lrr_rk)
+   rows_to_add <- dplyr::filter(busc$lrr_rp, .data$Name %in% lrr_rk$Name )
+    busc$lrr_rk <- dplyr::bind_rows(rows_to_add, lrr_rk)
 
   # remove the lrr_rps that became the lrr_rks from the lrr_rp object
-   searches$lrr_rp <- searches$lrr_rp %>%
-    dplyr::filter(!.data$Name %in% searches$lrr_rk$Name)
+   busc$lrr_rp <- busc$lrr_rp %>%
+    dplyr::filter(!.data$Name %in% busc$lrr_rk$Name)
 
 
   # get the non_lrr_rp class
-   searches$non_lrr_rp <- phobius_pfam %>%
-     dplyr::filter(! .data$Name %in% c(searches$lrr_rp$Name, searches$lrr_rk),
+   busc$non_lrr_rp <- phobius_pfam %>%
+     dplyr::filter(! .data$Name %in% c(busc$lrr_rp$Name, busc$lrr_rk),
                    .data$b_type == "NON_LRR_PFAM", .data$seq_from < .data$tm_start ) %>%
      dplyr::distinct() #%>%
 
   # get the non_lrr_rk class
-   searches$non_lrr_rk <- phobius_pfam %>%
-     dplyr::filter(.data$Name %in% searches$non_lrr_rp$Name, .data$b_type == "KINASE_PFAM",
+   busc$non_lrr_rk <- phobius_pfam %>%
+     dplyr::filter(.data$Name %in% busc$non_lrr_rp$Name, .data$b_type == "KINASE_PFAM",
                    .data$pfam_length >= 250, .data$tm_start < .data$seq_from) %>%
      dplyr::distinct()
 
     ## remove the non_lrr_rp that became non_lrr_rk
-   searches$non_lrr_rp <- searches$non_lrr_rp %>%
-     dplyr::filter(! .data$Name %in% searches$non_lrr_rk)
+   busc$non_lrr_rp <- busc$non_lrr_rp %>%
+     dplyr::filter(! .data$Name %in% busc$non_lrr_rk)
 
   # get the ecto domain class
-   phobius_pfam_ecto <- dplyr::left_join(phobius_pfam, searches$ecto, by = c("Name" = "SubjectID") ) %>%
+   phobius_pfam_ecto <- dplyr::left_join(phobius_pfam, busc$ecto, by = c("Name" = "SubjectID") ) %>%
      dplyr::distinct()
 
-   searches$lrr_rp_rk_with_ecto <- phobius_pfam_ecto %>%
-     dplyr::filter( .data$Name %in% c(searches$lrr_rp$Name, searches$lrr_rk),
+   busc$lrr_rp_rk_with_ecto <- phobius_pfam_ecto %>%
+     dplyr::filter( .data$Name %in% c(busc$lrr_rp$Name, busc$lrr_rk),
                     .data$Perc.Ident > 50, .data$S.start > .data$cut_site, .data$S.start < .data$tm_start
                     ) %>%
      tidyr::unite(pfam_coord, .data$seq_from:.data$seq_to, sep="-", remove=FALSE)
 
-  return(searches)
+  return(busc)
 }
 
 #' turn the tidy long format dataframe into a wider sequence per line dataframe
@@ -266,33 +268,49 @@ do_searches <- function(busc){
 
     if (busc$progress) message(paste("Phobius complete, found", length(busc$phobius$Name), "proteins with Signal Peptide and single TM domain\n"))
   } else {
-    if (busc$progress) message(paste("Phobius result found in save file, not redoing"))
+    if (busc$progress) message(paste("Phobius result found in restart_file, not redoing"))
   }
 
   if ( is.null(busc$pfam)){
-    if (busc$progress) message("Starting PFAM with new proteins")
+    if (busc$progress) message("Starting PFAMScan jobs at ebi.ac.uk.")
 
-    busc$pfam = submit_pfam(tostrvec(busc$aastringset), email=busc$email, progress=busc$progress, eval=busc$pfam_eval, wait=busc$wait, maxchecktime=busc$maxchecktime) %>%
-      process_pfam(busc$pfam_eval)
+    busc$pfam = submit_pfam(tostrvec(busc$aastringset), email=busc$email, progress=busc$progress, eval=busc$pfam_eval, wait=busc$wait, maxchecktime=busc$maxchecktime)
 
-    if (is(busc$pfam, "submission")){ ## if initial submission didnt complete in time and this is a restart
-      busc$pfam_progress = vector(mode="list", length = length(pfam$id))
-      names(busc$pfam_progess) = busc$pfam$id
+    if (attr(busc$pfam, "status") == "submission"){ ## if initial submission didnt complete in time and a restart will be needed
+      busc$pfam_progress = lapply(busc$pfam$id, function(x) { NULL })
+      names(busc$pfam_progress) <- busc$pfam$id
+
+    } else if (attr(busc$pfam, "status") == "complete"){
+
+      busc$pfam = busc$pfam %>%
+        process_pfam(busc$pfam_eval)
+      busc$pfam_progess = NULL
+      attr(busc$pfam, "status") <- "complete"
+
     }
+
     saveRDS(busc, busc$restart_file)
 
-  } else if (is(busc$pfam, "submission")) {
-    if (progress) message("Picking up PFAM from existing submissions")
+  } else if (attr(busc$pfam, "status") == "submission") {
+    if (busc$progress) message("Checking PFAMScan at ebi.ac.uk for status of previously submitted jobs")
 
     busc <- retrieve_pfam(busc)
+
+    if (attr(busc$pfam, "status") == "complete"){
+      busc$pfam = busc$pfam %>%
+        process_pfam(busc$pfam_eval)
+      busc$pfam_progess = NULL
+      attr(busc$pfam, "status") <- "complete"
+    }
+
     saveRDS(busc, busc$restart_file)
 
-  } else if (is(busc$pfam, "complete")) {
-    if (progress) message("PFAM result found in save file, not redoing")
+  } else if (attr(busc$pfam, "status") == "complete") {
+    if (busc$progress) message("PFAMScan result found in restart_file, not redoing")
   }
 
   if (is.null(busc$ecto)){
-
+    if (busc$progress) message("Starting ectodomain BLAST on local machine.")
     busc$ecto = get_ecto(totempfile(busc$aastringset), progress=busc$progress) %>%
     dplyr::filter(.data$E < busc$blast_eval) %>%
     tidyr::unite(hit_coord, .data$S.start:.data$S.end, sep="-", remove=FALSE)
@@ -300,9 +318,41 @@ do_searches <- function(busc){
     saveRDS(busc, busc$restart_file)
 
   } else {
-    if (busc$progress) message("Ecto domain result found in save file, not redoing")
+    if (busc$progress) message("Ectodomain result found in restart_file, not redoing")
   }
   return(busc)
+}
+
+
+#' check the status of the buscador object
+#'
+#' are all the searches done and the results compiled
+#'
+#' @param busc a buscador object
+#' @export
+complete <- function(busc) {
+  data.frame(
+   result = c(
+     "phobius_search",
+     "pfam_retrieval",
+     "ectodomain_search",
+     "lrr_rp_annotation",
+     "lrr_rk_annotation",
+     "lrr_rp_rk_with_ecto",
+     "non_lrr_rp",
+     "non_lrr_rk"
+   ),
+   completed = c(
+    !is.null(busc$phobius),
+    attr(busc$pfam, "status") = "complete",
+    !is.null(busc$ecto),
+    !is.null(busc$lrr_rp),
+    !is.null(busc$lrr_rk),
+    !is.null(busc$lrr_rp_rk_with_ecto),
+    !is.null(busc$non_lrr_rp),
+    !is.null(busc$non_lrr_rk)
+  )
+  )
 }
 
 #' get the dataframe of PFAM results from a `busco` search object from `buscar()`
