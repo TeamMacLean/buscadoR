@@ -120,9 +120,9 @@ buscar <- function(protein_file=NULL, restart_file=NULL, progress=FALSE, email =
 
   busc <- do_searches(busc)
 
-  if (is.null(busc$phobius)) return(sprintf("No phobius result in buscador object."))
-  if (attr(busc$pfam, "status") == "submission" ) return(sprintf("PFAMScan job not yet complete on ebi.ac.uk  Please try a restart later."))
-  if (is.null(busc$ecto)) return(sprintf("No ectodomain result in buscador object."))
+  if (is.null(busc$phobius)) warning(sprintf("No phobius result in buscador object.")); return(busc)
+  if (attr(busc$pfam, "status") == "submission" ) warning(sprintf("PFAMScan job not yet complete on ebi.ac.uk  Please try a restart later.")); return(busc)
+  if (is.null(busc$ecto)) warning(sprintf("No ectodomain result in buscador object.")); return(busc)
 
 
   ## add pfam info to all passing signal and tm domain carrying proteins
@@ -209,7 +209,7 @@ condense <- function(df) {
 #' @importFrom rlang .data
 mesa <- function(b){
 
-  if ("busco" %in% class(b)){
+  if ("buscador" %in% class(b)){
     df <- as.data.frame(b)
   }
 
@@ -330,7 +330,7 @@ do_searches <- function(busc){
 #'
 #' @param busc a buscador object
 #' @export
-complete <- function(busc) {
+completed <- function(busc) {
   data.frame(
    result = c(
      "phobius_search",
@@ -338,13 +338,13 @@ complete <- function(busc) {
      "ectodomain_search",
      "lrr_rp_annotation",
      "lrr_rk_annotation",
-     "lrr_rp_rk_with_ecto",
-     "non_lrr_rp",
-     "non_lrr_rk"
+     "lrr_rp_rk_with_ecto_annotation",
+     "non_lrr_rp_annotation",
+     "non_lrr_rk_annotation"
    ),
    completed = c(
     !is.null(busc$phobius),
-    attr(busc$pfam, "status") = "complete",
+    attr(busc$pfam, "status") == "complete",
     !is.null(busc$ecto),
     !is.null(busc$lrr_rp),
     !is.null(busc$lrr_rk),
@@ -490,9 +490,9 @@ dibujar <- function(b, which="lrr_rp", label_domains=FALSE) {
 seq_to_df <- function(b){
 
   data.frame(
-    seq_id = names(b$aastrset),
-    sequence =  as.character(b$aastrset, use.names=FALSE),
-    seq_length = Biostrings::width(b$aastrset)
+    seq_id = names(b$aastringset),
+    sequence =  as.character(b$aastringset, use.names=FALSE),
+    seq_length = Biostrings::width(b$aastringset)
   )
 }
 

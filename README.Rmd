@@ -19,59 +19,113 @@ knitr::opts_chunk$set(
 [![R-CMD-check](https://github.com/TeamMacLean/buscadoR/workflows/R-CMD-check/badge.svg)](https://github.com/TeamMacLean/buscadoR/actions)
 <!-- badges: end -->
 
-The goal of buscadoR is to find plant receptor proteins from provided FASTA sequence. It uses the web API of PFAM and phobius and a local BLAST to find repeat, transmembrane and ecto- domains, signal peptides then applies a heuristic to classify into receptor classes.
+The goal of buscadoR is to find plant receptor proteins from provided FASTA sequence. It uses the web API of Phobius, PFAMScan and a local BLAST to find signal peptides, repeats, transmembrane and ectodomains then applies a heuristic to classify into receptor classes.
 
 ## Installation
 
-You can install the development version of buscadoR from [GitHub](https://github.com/) with:
+You can install buscadoR from [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("TeamMacLean/buscadoR")
+devtools::install_github("TeamMacLean/buscadoR", branch="stepwise")
 ```
 
-## Performing the web search
+## Performing the web searches
 
 To start the searches with a new protein file you need to supply a FASTA file of protein sequences, your valid email address and specify a restart filename for use later. 
 
 
-```{r example, eval=FALSE}
+```{r, eval=FALSE}
 library(buscadoR)
 fasta_sequences <- "true_positive.fa"
 saved_progress <- "saved_progress.fa"
-searches <- buscar(protein_file = fasta_sequences, restart_file = saved_progress, email="my_name@my.org")
+searches <- buscar(protein_file = fasta_sequences, restart_file = saved_progress, email="dan.maclean@tsl.ac.uk")
 ```
-
-The process will run the searches. Phobius searches are really quick. Ectodomain BLASTs are done locally. PFAM can take a while. By default, the process will wait just one second after submission is complete for PFAM before quitting and writing the progress to the `restart_file` you specified. 
-
-In simple cases with just a few (<20) proteins you may wish to wait and to run the searches and get the results in one step. 
-
-
-In most cases it is expected that the searches are done in two steps. This is the same call but only the `restart_file` is needed, the parameters are carried over from the initial job.
-You can check whether the searches have all been retrieved with `completed()` which returns `TRUE` if everything is complete. 
-
-
-```{r}
-searches <- buscar(restart_file = saved_progress)
-complete(searches)
+```{r, echo=FALSE }
+searches <- readRDS("stored_busc.rds")
 ```
 
 
-If you want a progress bar in an interactive session
+```
+restart_file saved_progress.fa doesn't exist, interpreting this as new job with true_positive.fa as input
+
+
+Building a new DB, current time: 03/31/2022 11:14:26
+New DB name:   /var/folders/22/kjdvv_k14cj1m6hq5hl527qw8__5qg/T/RtmpACGE8i/d33a8d44877492693f49a475ebdb317d/buscador_8f593ae81e14.fa
+New DB title:  /var/folders/22/kjdvv_k14cj1m6hq5hl527qw8__5qg/T//RtmpACGE8i/d33a8d44877492693f49a475ebdb317d//buscador_8f593ae81e14.fa
+Sequence type: Protein
+Keep MBits: T
+Maximum file size: 1000000000B
+Adding sequences from FASTA; added 6 sequences in 0.00922894 seconds.
+```
+
+The process will run the searches. Phobius searches are really quick. Ectodomain BLASTs are done locally. PFAMScan is more complicated so can take a while. By default, the process will wait just one second after submission is complete for PFAM before quitting and writing the progress to the `restart_file` you specified. 
+
+In most cases it is expected that the searches are done in two steps. So after having waited a while to give PFAMScan chance to run your sequences, you can return and check the status with the same call to `buscar()` though only the `restart_file` is needed as the parameters are carried over from the initial job.
+
+You'll see a status update and a reminder to come back later if things aren't done yet. You can repeat this step as often as you like. Search results can be retrieved from the PFAMScan server for up to 7 days. 
 
 ```{r, eval=FALSE}
-searches <- buscar(file_path, email="my_name@my.org", progress=TRUE)
+searches <- buscar(restart_file = saved_progress)
 ```
 
+```
+restart_file saved_progress.fa found, interpreting this as a restarted job with existing protein set.
+Retrieving the results for query pfamscan-R20220331-111414-0032-9483591-p1m...Done!
+Done 1 of 1 PFAMScan jobs at ebi.ac.uk
+```
+You'll get a notice like this if things aren't done yet
 
-And if you need to increase the amount of time the process will wait for the PFAM server before giving up. This example checks every five seconds for 5 minutes
+```
+restart_file saved_progress.fa found, interpreting this as a restarted job with existing protein set.
+Retrieving the results for query pfamscan-R20220331-111414-0032-9483591-p1m...Retrieving the query id pfamscan-R20220331-111414-0032-9483591-p1m did not worked: <?xml version="1.0" encoding="UTF-8"?>
+<error>
+  <description>Job 'pfamscan-R20220331-111414-0032-9483591-p1m' is still running</description>
+</error>
 
-```{r,eval = FALSE}
-searches <- buscar(file_path, email="my_name@my.org", progress=TRUE,
-                   wait=5, maxchecktime=360 )
+Done 0 of 1 PFAMScan jobs at ebi.ac.uk
+PFAMScan jobs not complete at ebi.ac.uk. Please restart later.
+```
+
+You can check whether the searches have all been retrieved with `completed()` and check all steps are done as follows, getting `TRUE` from the last expression indicates all are done.
+
+```{r}
+completed(searches)
+all(completed(searches)$completed)
+```
+
+**IMPORTANT NOTE**
+
+If the `restart_file` exists then a restart will _always_ be attempted, you'll need to make sure the file doesn't exist if you want to start the process from the beginning.
+
+### Saving a raw search results file
+
+When the job is done and all are retrieved, you can manually save the search results to a binary file with `saveRDS()` for loading again later with the built-in `readRDS()`. This is basically a dump of the searches and isn't the same as saving the actual found receptor information, that is done later. Saving the whole search is just a safety measure in case the computer crashes while you're inspecting the results.
+
+```{r, eval=FALSE}
+saveRDS(searches, "a_saved_search.rds")
+earlier_search <- readRDS("a_saved_search.rds")
+```
+
+### Forcing the process to wait longer for the PFAMScan server to complete
+
+You may wish not to use the restart and just have the `buscar()` process sit there and wait for the PFAMScan wait, this may be useful for simple cases with just a few (<20) proteins. Its effectiveness will depend on the reliability of the internet connection you have. The `buscar()` option `maxchecktime` sets the time (in seconds) that the process will wait before giving up, `wait` sets how long the process waits between checks on the server. Note the restart file is still needed.
+
+```{r, eval=FALSE}
+searches <- buscar(protein_file = "true_positive.fa", restart_file = "saved_progress.rds", email="my_name@my.org", maxchecktime=600, wait=60)
+```
+
+### More reporting on progress
+
+If you want more information on progress, which is often very useful, you can set `progress` to `TRUE` in the initial `buscar()` call
+
+```{r, eval=FALSE}
+searches <- buscar(protein_file = fasta_sequences, restart_file = saved_progress, email="my_name@my.org", progress = TRUE)
 ```
 
 ## Examining the results
+
+The raw results in the saved search object aren't too useful on their own, so there is a set of helper functions to help you extract data in a useable result.
 
 A summary table of each type found can be generated
 
@@ -79,7 +133,7 @@ A summary table of each type found can be generated
 mesa(searches)
 ```
 
-A dataframe of one row per protein (ideal for exporting) can be created
+A dataframe of one row per receptor protein found (ideal for exporting) can be created
 
 ```{r}
 as.data.frame(searches)
@@ -108,7 +162,7 @@ dibujar(searches, which = "lrr_rp")
 
 ## Exporting results
 
-A dataframe of one row per protein can be created and written out in the usual way
+A dataframe of one row per receptor protein can be created and written out in the usual way
 
 ```{r, eval=FALSE}
 res <- as.data.frame(searches)
@@ -121,15 +175,13 @@ Annotated FASTA sequences can be exported
 write_seqs(searches, "my_seqs.fa")
 ```
 
-## Other
+## Other Stuff
 
-A dataframe compatible with the `drawProteins` package [here on bioconductor](https://bioconductor.org/packages/release/bioc/vignettes/drawProteins/inst/doc/drawProteins_BiocStyle.html) can be created for further plotting work.
+A dataframe compatible with the `drawProteins` package [here on bioconductor](https://bioconductor.org/packages/release/bioc/vignettes/drawProteins/inst/doc/drawProteins_BiocStyle.html) can be created for further plotting work. Note the plot is a `ggplot2` object and can be styled using that package too. 
 
 ```{r, eval=FALSE}
 dp <- as.drawProteins(searches)
 ```
-
-Note the plot is a `ggplot2` object and can be styled using that package too. 
 
 The definitions used for the classification can be returned
 

@@ -11,8 +11,8 @@ buscar(
   email = NULL,
   pfam_eval_cutoff = 20,
   blast_eval_cutoff = 1e-06,
-  wait = 5,
-  maxchecktime = 120
+  wait = 1,
+  maxchecktime = 1
 )
 }
 \arguments{
@@ -33,7 +33,7 @@ buscar(
 \item{maxchecktime}{seconds to stop checking PFAM and abort (120)}
 }
 \value{
-list of tidy dataframes of each type of receptor and its Phobius, PFAM and BLAST hits
+buscador object list of tidy dataframes of each type of receptor and its Phobius, PFAM and BLAST hits
 }
 \description{
 runs the internet search using the Phobius server, the PFAM API and local BLAST. Then collates the results
