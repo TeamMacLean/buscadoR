@@ -42,6 +42,7 @@ saved_progress <- "saved_progress.fa"
 searches <- buscar(protein_file = fasta_sequences, restart_file = saved_progress, email="dan.maclean@tsl.ac.uk")
 ```
 ```{r, echo=FALSE }
+library(buscadoR)
 searches <- readRDS("stored_busc.rds")
 ```
 

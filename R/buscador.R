@@ -329,6 +329,7 @@ do_searches <- function(busc){
 #' are all the searches done and the results compiled
 #'
 #' @param busc a buscador object
+#'
 #' @export
 completed <- function(busc) {
   data.frame(
