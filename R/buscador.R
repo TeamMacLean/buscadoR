@@ -120,10 +120,9 @@ buscar <- function(protein_file=NULL, restart_file=NULL, progress=FALSE, email =
 
   busc <- do_searches(busc)
 
-  if (is.null(busc$phobius)) warning(sprintf("No phobius result in buscador object.")); return(busc)
-  if (attr(busc$pfam, "status") == "submission" ) warning(sprintf("PFAMScan job not yet complete on ebi.ac.uk  Please try a restart later.")); return(busc)
-  if (is.null(busc$ecto)) warning(sprintf("No ectodomain result in buscador object.")); return(busc)
-
+  if (is.null(busc$phobius)) {warning(sprintf("No phobius result in buscador object.")); return(busc)}
+  if (attr(busc$pfam, "status") == "submission" ) {warning(sprintf("PFAMScan job not yet complete on ebi.ac.uk  Please try a restart later.")); return(busc)}
+  if (is.null(busc$ecto)) {warning(sprintf("No ectodomain result in buscador object.")); return(busc)}
 
   ## add pfam info to all passing signal and tm domain carrying proteins
   phobius_pfam <- dplyr::left_join(busc$phobius, busc$pfam, by = c("Name" = "seq_name")) %>%
