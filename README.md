@@ -4,8 +4,6 @@
 # buscadoR
 
 <!-- badges: start -->
-
-[![R-CMD-check](https://github.com/TeamMacLean/buscadoR/workflows/R-CMD-check/badge.svg)](https://github.com/TeamMacLean/buscadoR/actions)
 <!-- badges: end -->
 
 The goal of buscadoR is to find plant receptor proteins from provided
@@ -19,7 +17,7 @@ You can install buscadoR from [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("TeamMacLean/buscadoR", branch="stepwise")
+devtools::install_github("TeamMacLean/buscadoR@stepwise")
 ```
 
 ## Performing the web searches
@@ -31,11 +29,11 @@ restart filename for use later.
 ``` r
 library(buscadoR)
 fasta_sequences <- "true_positive.fa"
-saved_progress <- "saved_progress.fa"
+saved_progress <- "saved_progress.RDS"
 searches <- buscar(protein_file = fasta_sequences, restart_file = saved_progress, email="dan.maclean@tsl.ac.uk")
 ```
 
-    restart_file saved_progress.fa doesn't exist, interpreting this as new job with true_positive.fa as input
+    restart_file saved_progress.RDS doesn't exist, interpreting this as new job with true_positive.fa as input
 
 
     Building a new DB, current time: 03/31/2022 11:14:26
@@ -268,7 +266,6 @@ dibujar(searches, which = "lrr_rp")
 #>     rbind, Reduce, rownames, sapply, setdiff, sort, table, tapply,
 #>     union, unique, unsplit, which.max, which.min
 #> Loading required package: S4Vectors
-#> Warning: package 'S4Vectors' was built under R version 4.1.3
 #> Loading required package: stats4
 #> 
 #> Attaching package: 'S4Vectors'
