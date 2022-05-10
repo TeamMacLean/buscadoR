@@ -26,7 +26,7 @@ You can install buscadoR from [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("TeamMacLean/buscadoR@stepwise")
+devtools::install_github("TeamMacLean/buscadoR")
 ```
 
 ## Performing the web searches
