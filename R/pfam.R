@@ -1,25 +1,12 @@
 #' Query PFAM web server.
 #'
-#' @param file A character file path of FASTA protein amino acid sequences a
-#' @param progress Boolean, whether to show the progress bar, at default set to
+#' @param file A character vector of FASTA protein amino acid sequences
+#' @param progress Boolean, whether to report progress bar, at default set to
 #' FALSE.
 #' @param email Character, a valid user email address, needed for PFAMscan use
 #' @param eval PFAM hit eval cutoff
-#' @return  A data frame with columns:
-#' \describe{
-#' \item{seq_name}{Character, name of the submitted sequence.}
-#' \item{hit}{Character, the name of a PFAM hit.}
-#' \item{acc}{Character, the accession of a PFAM hit.}
-#' \item{eval}{Double, E-value of the hit.}
-#' \item{type}{Character, PFAM type of the hit}
-#' \item{seq_from}{Integer, start of match on sequence}
-#' \item{seq_to}{Integer, end of match on sequence}
-#' \item{hit_from}{Integer, start of match on hit}
-#' \item{hit_to}{Integer, end of match on hit}
-#' }
-#'
-#'
-#'
+#' @return  The buscador$pfam object populated with submission query ids and marked with class 'submission'
+#' or if search completed in time a data frame with class 'complete':
 #' @source \url{https://www.ebi.ac.uk/Tools/common/tools/help/index.html}
 #'
 #' @references Madeira F, Park YM, Lee J, et al. The EMBL-EBI search and sequence analysis
@@ -30,66 +17,14 @@
 #' @import stringr
 #' @import xml2
 #' @importFrom methods is
+#' @importFrom rlang .data
+submit_pfam <- function(fasta_str, email, progress = FALSE, eval=20, maxchecktime=120, wait=10) {
+ ### progress doesn't work
 
 
-
-get_pfam <- function(file, email, progress = FALSE, eval=20, maxchecktime=120, wait=10) {
-
-  if (missing(progress)) {
-    progress <- FALSE
-  }
-  if (length(progress) > 1) {
-    progress <- FALSE
-    warning("progress should be of length 1, setting to default:
-        progress = FALSE",
-            call. = FALSE
-    )
-  }
-  if (!is.logical(progress)) {
-    progress <- as.logical(progress)
-    warning("progress is not logical, converting using 'as.logical'",
-            call. = FALSE
-    )
-  }
-  if (is.na(progress)) {
-    progress <- FALSE
-    warning("progress was set to NA, setting to default: progress = FALSE",
-            call. = FALSE
-    )
-  }
-  if (length(file) > 1) {
-    stop("one fasta file per function call can be supplied",
-         call. = FALSE
-    )
-  }
-  if (file.exists(file)) {
-    file_name <- file
-  } else {
-    stop("cannot find file in the specified path",
-         call. = FALSE
-    )
-  }
-  tmppfam <- tempdir()
-  file_list <- split_fasta(
-    path_in = file_name,
-    path_out = tmppfam,
-    num_seq = 100 #max pfam allows
-  )
-  len <- length(file_list)
-  if (grepl("temp_", file_name)) {
-    unlink(file_name)
-  }
-  if (progress) {
-    pb <- utils::txtProgressBar(
-      min = 0,
-      max = len,
-      style = 3
-    )
-  }
-  collected_res <- vector("list", len)
-  for (i in seq_along(len)) {
-    fasta_str <- readr::read_file(file_list[i])
     r <- NULL
+    pfam_submission <- NULL
+    time_now <- lubridate::now()
     if (progress){
       r <- pfamscanr::pfamscan(
         fasta_str,
@@ -108,40 +43,82 @@ get_pfam <- function(file, email, progress = FALSE, eval=20, maxchecktime=120, w
           )
         )
       }
-    if (is.null(r) ){
-      stop("PFAMScan failed, null obtained from PFAM. This is most likely due to a timeout, please try increasing 'wait' and 'maxchecktime' ")
+      pfam_submission <- pfamscanr::pfamscanr_queries$dat # pull out of environment object belonging to session
+      attr(pfam_submission, "status") <- "submission"
+    if (is.null(r) ){ # if the search didnt return in time.
+      return(
+        pfam_submission %>%
+               dplyr::filter(.data$time_posted > time_now )
+        # This is done to stop the list of submissions growing if the user has a persistent R session
+        # and has run the code more than once.
+        # The environment from pfamscanr holds the submissions for the entire session, not just the
+        # last run of the code
+        # A single submission id will represent 100 proteins (or the remainder of the set)
+        )
+      #stop("PFAMScan failed, null obtained from PFAM. This is most likely due to a timeout, please try increasing 'wait' and 'maxchecktime' ")
+    } else {
+      collected_res <- rename_pfam_cols(r)
+      attr(collected_res, "status") <- "complete"
+      return(collected_res)
     }
-    collected_res[[i]] <- data.frame(
-      seq_name = r$seq$name,
-      hit = r$name,
-      acc = r$acc,
-      eval = as.numeric(r$evalue),
-      type = r$type,
-      seq_from = as.numeric(r$seq$from),
-      seq_to = as.numeric(r$seq$to),
-      hit_from = as.numeric(r$hmm$from),
-      hit_to = as.numeric(r$hmm$to)
-    )
+}
 
-    unlink(file_list[i])
-    if (progress) {
-      utils::setTxtProgressBar(pb, i)
-    }
-  }
-  if (progress) {
-    close(pb)
-  }
-  collected_res <- do.call(
-    rbind,
-    collected_res
+#' reformat pfam result columns
+#'
+#' @param r pfam result from pfamscanr
+#'
+rename_pfam_cols <- function(r) {
+  data.frame(
+    seq_name = r$seq$name,
+    hit = r$name,
+    acc = r$acc,
+    eval = as.numeric(r$evalue),
+    type = r$type,
+    seq_from = as.numeric(r$seq$from),
+    seq_to = as.numeric(r$seq$to),
+    hit_from = as.numeric(r$hmm$from),
+    hit_to = as.numeric(r$hmm$to)
   )
 
-  return(collected_res)
+}
+
+#' check the PFAM server for an update on job progress
+#'
+#' looks at the buscador$pfam_progress object and checks progress of ID on PFAM.
+#' If all IDs are complete and retrieved, then the individual dataframes are combined
+#' and put into buscador$pfam and given class "complete". If not the
+#' buscador$pfam_progress is updated as far as possible but the class remains
+#' "submission"
+#' @param busc buscador object
+#' @return buscador object with updated pfam_progress slot or buscador object with
+#' complete pfam slot
+retrieve_pfam <- function(busc) {
+
+  n <- names(busc$pfam_progress)
+  busc$pfam_progress = lapply(n, function(pfam){ pfamscanr::pfamscan_retrieve(pfam)})
+  names(busc$pfam_progress) <- n
+
+
+  done <- sum(sapply(busc$pfam_progress, function(x) !is.null(x), simplify = TRUE))
+
+  message(paste0("Done ", done, " of ", length(busc$pfam_progress), " PFAMScan jobs at ebi.ac.uk"))
+  if (done == length(busc$pfam_progress)){
+    ## make the big dataframe
+    res <- lapply(busc$pfam_progress, rename_pfam_cols)
+    collected_res = do.call(rbind, res)
+    busc$pfam = collected_res
+    attr(busc$pfam, "status") <- "complete"
+  } else {
+    message(paste0("PFAMScan jobs not complete at ebi.ac.uk. Please restart later."))
+  }
+
+
+  return(busc)
 }
 
 #' process raw pfam result into dataframe
 #'
-#' @param pr PFAM result from `get_pfam()`
+#' @param pr complete PFAM result
 #' @return dataframe
 #' @importFrom rlang .data
 process_pfam <- function(pr,pfam_eval) {

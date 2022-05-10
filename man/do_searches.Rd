@@ -4,35 +4,22 @@
 \alias{do_searches}
 \title{run searches over the internet and local BLAST.}
 \usage{
-do_searches(
-  file_path,
-  progress = FALSE,
-  email = NULL,
-  pfam_eval = 20,
-  blast_eval = 1e-06,
-  wait = 5,
-  maxchecktime = 120
-)
+do_searches(busc)
 }
 \arguments{
-\item{file_path}{path to protein fasta file}
-
-\item{progress}{show a progress bar as job runs (not recommended for non interactive sessions)}
-
-\item{email}{a valid email address}
-
-\item{pfam_eval}{exclude pfam hits with eval over this value (20)}
-
-\item{blast_eval}{exclude blast hits with eval over this value (1e-6)}
-
-\item{wait}{seconds to wait between PFAM checks (5)}
-
-\item{maxchecktime}{seconds to stop checking PFAM and abort (360)}
+\item{busc}{buscador object from `buscar`}
 }
 \value{
-list of dataframes of search results
+search populated buscador object
 }
 \description{
 Runs searches for proteins at Phobius, PFAM and local BLAST.
 Reformat returned results from searches and apply basic quality filters
+}
+\details{
+if the search at PFAM does not complete the buscador$pfam_progress object is
+populated with submission IDs for a later restart run and the restart_file written.
+In later runs the PFAM server is queried to collect all completed runs. This process should
+be repeated until all the queries are complete. Once all queries are complete the buscador$pfam object gets the
+dataframe of all PFAM results and is marked with class "complete"
 }

@@ -7,7 +7,7 @@
 process_pfam(pr, pfam_eval)
 }
 \arguments{
-\item{pr}{PFAM result from `get_pfam()`}
+\item{pr}{complete PFAM result}
 }
 \value{
 dataframe

@@ -7,7 +7,7 @@
 dibujar(b, which = "lrr_rp", label_domains = FALSE)
 }
 \arguments{
-\item{b}{`busco` search object returned from `buscar()`}
+\item{b}{`buscador` search object returned from `buscar()`}
 
 \item{which}{the receptor type to return, one of 'lrr_rp', 'lrr_rk', 'non_lrr_rp', 'non_lrr_rk', 'lrr_rp_ecto'}
 

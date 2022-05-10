@@ -2,15 +2,15 @@
 % Please edit documentation in R/buscador.R
 \name{write_seqs}
 \alias{write_seqs}
-\title{write the receptor sequences to a fasta file}
+\title{write the annotated receptor sequences to a fasta file}
 \usage{
 write_seqs(b, out_file_path)
 }
 \arguments{
-\item{b}{`busco` search object returned from `buscar()`}
+\item{b}{`buscador` search object returned from `buscar()`}
 
 \item{out_file_path}{fasta file path and name to write}
 }
 \description{
-write the receptor sequences to a fasta file
+write the annotated receptor sequences to a fasta file
 }
