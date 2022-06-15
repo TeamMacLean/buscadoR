@@ -7,7 +7,7 @@
 mesa(b)
 }
 \arguments{
-\item{b}{an object of class `busco`, usually the search results from `buscar()`}
+\item{b}{an object of class `buscador`, usually the search results from `buscar()`}
 }
 \value{
 knitr::kable object

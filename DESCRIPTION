@@ -1,11 +1,12 @@
 Package: buscadoR
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1.1
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Title: Combine results from hmmer, deeptmhmm and BLAST into RLK protein predictions. 
+Version: 0.1.2
+Author: Dan MacLean
+Maintainer: Dan MacLean <dan.maclean@tsl.ac.uk>
+Description: This package will load results from hmmer, deeptmhmm, and BLAST, parse them and assign to RLK protein classes. 
+    The raw input to the functions here are outputs from the above programs ideally obtained using the buscadoR Google Colab book.
+    This package allows easy inspection, summaries and figures to be generated about the putative RLKs discovered.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
@@ -14,23 +15,15 @@ Imports:
     dplyr,
     drawProteins,
     ggplot2,
-    httr,
     knitr,
-    lubridate,
     magrittr,
-    methods,
-    pfamscanr (>= 0.1.9999),
-    rBLAST (>= 0.99.2),
     readr,
+    rhmmer,
     rlang,
-    seqinr,
     stringr,
-    tidyr,
-    xml2
+    tidyr
 RoxygenNote: 7.1.2
 Remotes: 
-    TeamMacLean/pfamscanr,
-    mhahsler/rBLAST
 Depends: 
     R (>= 4.1.0)
 biocViews:

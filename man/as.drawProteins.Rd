@@ -3,7 +3,7 @@
 \name{as.drawProteins}
 \alias{as.drawProteins}
 \title{get a dataframe of receptor type data in `drawProteins` format
-for pretty drawing. From a `busco` search object from `buscar()`}
+for pretty drawing. From a `buscador` search object from `buscar()`}
 \usage{
 as.drawProteins(b, which = "lrr_rp")
 }
@@ -17,5 +17,5 @@ dataframe
 }
 \description{
 get a dataframe of receptor type data in `drawProteins` format
-for pretty drawing. From a `busco` search object from `buscar()`
+for pretty drawing. From a `buscador` search object from `buscar()`
 }
