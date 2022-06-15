@@ -18,7 +18,20 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of buscadoR is to find plant receptor proteins from provided FASTA sequence. It uses the web API of Phobius, PFAMScan and a local BLAST to find signal peptides, repeats, transmembrane and ectodomains then applies a heuristic to classify into receptor classes.
+
+```{r, echo=FALSE, out.width="25%"}
+knitr::include_graphics("logo.png")
+```
+
+
+The goal of `buscadoR` is to find plant receptor proteins in information from from hmmer, deeptmhmm and BLAST to find signal peptides, repeats, transmembrane and ectodomains then applies a heuristic to classify into receptor classes. 
+
+
+## Prerequisites
+
+`buscadoR` requires input from `hmmer`, `deeptmhmm` and `BLAST`. A Google Colab notebook is available to help you run these time consuming searches easily. Go to the [Notebook](https://colab.research.google.com/drive/1hKDLBCZQcB-wuaFjPGEyTFk0AV34AdON?usp=sharing) to run searches before proceeding. If you wish to run these locally please see the section Running `buscadoR` searches locally". 
+
+This R package assumes that you have already performed those searches and have the necessary files to hand.
 
 ## Installation
 
@@ -29,150 +42,81 @@ You can install buscadoR from [GitHub](https://github.com/) with:
 devtools::install_github("TeamMacLean/buscadoR")
 ```
 
-## Performing the web searches
+## Compiling the results, classifying the proteins
 
-To start the searches with a new protein file you need to supply a FASTA file of protein sequences, your valid email address and specify a restart filename for use later. 
+The search results can be combined and the RLK classes predicted with the `buscar` function. Pass in all the input files, including the original FASTA file.
 
+Note that you can pass either gzipped (`.gz`) files or plain text files.
 
-```{r, eval=FALSE}
+```{r,eval=FALSE}
 library(buscadoR)
-fasta_sequences <- "true_positive.fa"
-saved_progress <- "saved_progress.RDS"
-searches <- buscar(protein_file = fasta_sequences, restart_file = saved_progress, email="dan.maclean@tsl.ac.uk")
+
+fasta_file <- "arabidopsis_proteome.fa"
+hmmer_file <- "hmmer_results.txt.gz"
+deeptmhmm_file <- "deeptmhmm_results.txt.gz"
+blast_file <- "blast_results.txt.gz"
+
+b <- buscar(hmmer = hmmer_file, deeptmhmm = deeptmhmm_file, blast = blast_file, fasta = fasta_file)
 ```
-```{r, echo=FALSE }
+```{r, echo=FALSE}
 library(buscadoR)
-searches <- readRDS("stored_busc.rds")
-```
-
-
-```
-restart_file saved_progress.RDS doesn't exist, interpreting this as new job with true_positive.fa as input
-
-
-Building a new DB, current time: 03/31/2022 11:14:26
-New DB name:   /var/folders/22/kjdvv_k14cj1m6hq5hl527qw8__5qg/T/RtmpACGE8i/d33a8d44877492693f49a475ebdb317d/buscador_8f593ae81e14.fa
-New DB title:  /var/folders/22/kjdvv_k14cj1m6hq5hl527qw8__5qg/T//RtmpACGE8i/d33a8d44877492693f49a475ebdb317d//buscador_8f593ae81e14.fa
-Sequence type: Protein
-Keep MBits: T
-Maximum file size: 1000000000B
-Adding sequences from FASTA; added 6 sequences in 0.00922894 seconds.
-```
-
-The process will run the searches. Phobius searches are really quick. Ectodomain BLASTs are done locally. PFAMScan is more complicated so can take a while. By default, the process will wait just one second after submission is complete for PFAM before quitting and writing the progress to the `restart_file` you specified. 
-
-In most cases it is expected that the searches are done in two steps. So after having waited a while to give PFAMScan chance to run your sequences, you can return and check the status with the same call to `buscar()` though only the `restart_file` is needed as the parameters are carried over from the initial job.
-
-You'll see a status update and a reminder to come back later if things aren't done yet. You can repeat this step as often as you like. Search results can be retrieved from the PFAMScan server for up to 7 days. 
-
-```{r, eval=FALSE}
-searches <- buscar(restart_file = saved_progress)
-```
-
-```
-restart_file saved_progress.fa found, interpreting this as a restarted job with existing protein set.
-Retrieving the results for query pfamscan-R20220331-111414-0032-9483591-p1m...Done!
-Done 1 of 1 PFAMScan jobs at ebi.ac.uk
-```
-You'll get a notice like this if things aren't done yet
-
-```
-restart_file saved_progress.fa found, interpreting this as a restarted job with existing protein set.
-Retrieving the results for query pfamscan-R20220331-111414-0032-9483591-p1m...Retrieving the query id pfamscan-R20220331-111414-0032-9483591-p1m did not worked: <?xml version="1.0" encoding="UTF-8"?>
-<error>
-  <description>Job 'pfamscan-R20220331-111414-0032-9483591-p1m' is still running</description>
-</error>
-
-Done 0 of 1 PFAMScan jobs at ebi.ac.uk
-PFAMScan jobs not complete at ebi.ac.uk. Please restart later.
-```
-
-You can check whether the searches have all been retrieved with `completed()` and check all steps are done as follows, getting `TRUE` from the last expression indicates all are done.
-
-```{r}
-completed(searches)
-all(completed(searches)$completed)
-```
-
-**IMPORTANT NOTE**
-
-If the `restart_file` exists then a restart will _always_ be attempted, you'll need to make sure the file doesn't exist if you want to start the process from the beginning.
-
-### Saving a raw search results file
-
-When the job is done and all are retrieved, you can manually save the search results to a binary file with `saveRDS()` for loading again later with the built-in `readRDS()`. This is basically a dump of the searches and isn't the same as saving the actual found receptor information, that is done later. Saving the whole search is just a safety measure in case the computer crashes while you're inspecting the results.
-
-```{r, eval=FALSE}
-saveRDS(searches, "a_saved_search.rds")
-earlier_search <- readRDS("a_saved_search.rds")
-```
-
-### Forcing the process to wait longer for the PFAMScan server to complete
-
-You may wish not to use the restart and just have the `buscar()` process sit there and wait for the PFAMScan wait, this may be useful for simple cases with just a few (<20) proteins. Its effectiveness will depend on the reliability of the internet connection you have. The `buscar()` option `maxchecktime` sets the time (in seconds) that the process will wait before giving up, `wait` sets how long the process waits between checks on the server. Note the restart file is still needed.
-
-```{r, eval=FALSE}
-searches <- buscar(protein_file = "true_positive.fa", restart_file = "saved_progress.rds", email="my_name@my.org", maxchecktime=600, wait=60)
-```
-
-### More reporting on progress
-
-If you want more information on progress, which is often very useful, you can set `progress` to `TRUE` in the initial `buscar()` call
-
-```{r, eval=FALSE}
-searches <- buscar(protein_file = fasta_sequences, restart_file = saved_progress, email="my_name@my.org", progress = TRUE)
+b <- readRDS("saved.rds")
 ```
 
 ## Examining the results
 
-The raw results in the saved search object aren't too useful on their own, so there is a set of helper functions to help you extract data in a useable result.
+A set of helper functions to help you extract data into a useable result is provided.
 
 A summary table of each type found can be generated
 
 ```{r}
-mesa(searches)
+mesa(b)
 ```
 
 A dataframe of one row per receptor protein found (ideal for exporting) can be created
 
 ```{r}
-as.data.frame(searches)
+as.data.frame(b)
 ```
 
-Tidy format dataframe of each type of receptor protein can be extracted 
+A tidy format dataframe of each type of receptor protein can be extracted 
 
 ```{r}
-lrr_rp(searches)
-#also lrr_rk(), non_lrr_rp(), non_lrr_rk(), lrr_rp_rk_with_ecto()
+lrr_rp(b)
+
 ```
+
+also `lrr_rk()`, `non_lrr_rp()`, `non_lrr_rk()`, `lrr_rp_rk_with_ecto()`
 
 Raw search results from the databases can be extracted
 
 ```{r}
-pfam_results(searches)
-#also phobius_results(), ecto_results()
+hmmer_results(b)
 ```
 
-Each set of found proteins can be rendered as a plot
+also `deeptmhmm_results()`, `ecto_results()`
 
-```{r}
-dibujar(searches, which = "lrr_rp")
-#also use "lrr_rk", "non_lrr_rp", "non_lrr_rk", "lrr_rp_rk_with_ecto"
+Each set of putative proteins can be rendered as a plot
+
+```{r, message=FALSE, fig.height=8}
+dibujar(b, which = "lrr_rp")
 ```
+
+also use "lrr_rk", "non_lrr_rp", "non_lrr_rk", "lrr_rp_rk_with_ecto"
 
 ## Exporting results
 
 A dataframe of one row per receptor protein can be created and written out in the usual way
 
 ```{r, eval=FALSE}
-res <- as.data.frame(searches)
+res <- as.data.frame(b)
 readr::write_csv(res, "my_results.csv")
 ```
 
 Annotated FASTA sequences can be exported
 
 ```{r, eval=FALSE}
-write_seqs(searches, "my_seqs.fa")
+write_seqs(b, "my_seqs.fa")
 ```
 
 ## Other Stuff
@@ -180,13 +124,33 @@ write_seqs(searches, "my_seqs.fa")
 A dataframe compatible with the `drawProteins` package [here on bioconductor](https://bioconductor.org/packages/release/bioc/vignettes/drawProteins/inst/doc/drawProteins_BiocStyle.html) can be created for further plotting work. Note the plot is a `ggplot2` object and can be styled using that package too. 
 
 ```{r, eval=FALSE}
-dp <- as.drawProteins(searches)
+dp <- as.drawProteins(b)
 ```
 
 The definitions used for the classification can be returned
 
 ```{r}
 definiciones(which="lrr_rp")
-#also use "lrr_rk", "non_lrr_rp", "non_lrr_rk", "lrr_rp_rk_with_ecto", "all"
 ```
+also use "lrr_rk", "non_lrr_rp", "non_lrr_rk", "lrr_rp_rk_with_ecto", "all"
 
+
+## Running `buscadoR` searches locally
+
+If you wish to run the searches locally the output formats for each program need to be set carefully to work with `buscar()`.
+
+### `hmmer`
+
+The PFAM domain hmms used for the `hmmer` search are provided here as a file [buscador_pfam_hmm](https://github.com/TeamMacLean/buscador_hlp/blob/main/buscador.hmm). Alternatively you can parse the latest versions from the PFAM-A database. The required IDs can be listed from `buscadoR` as they are held in the data objects `lrr_pfam`, `non_lrr_pfam` and `kinase_pfams`.
+
+When running `hmmscan` use `--domtblout` as the output option.
+
+### `deeptmhmm`
+
+There are no options for `deeptmhmm`. When running this locally, a single output file is created for each sequence. Just concatenate these into one file for input into `buscar()`
+
+### `blastp`
+
+The ecto-domains for use as query sequence in the `blastp` are available here as a fasta [buscador_ecto_fasta](https://github.com/TeamMacLean/buscador_hlp/blob/main/At_ecto.fa)
+
+Use `blastp` with these as the query and the proteins of interest as the subject, select `outfmt 6`. The resulting text file can be used as input to `buscar()`

@@ -6,10 +6,24 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of buscadoR is to find plant receptor proteins from provided
-FASTA sequence. It uses the web API of Phobius, PFAMScan and a local
-BLAST to find signal peptides, repeats, transmembrane and ectodomains
-then applies a heuristic to classify into receptor classes.
+<img src="logo.png" width="25%" />
+
+The goal of `buscadoR` is to find plant receptor proteins in information
+from from hmmer, deeptmhmm and BLAST to find signal peptides, repeats,
+transmembrane and ectodomains then applies a heuristic to classify into
+receptor classes.
+
+## Prerequisites
+
+`buscadoR` requires input from `hmmer`, `deeptmhmm` and `BLAST`. A
+Google Colab notebook is available to help you run these time consuming
+searches easily. Go to the
+[Notebook](https://colab.research.google.com/drive/1hKDLBCZQcB-wuaFjPGEyTFk0AV34AdON?usp=sharing)
+to run searches before proceeding. If you wish to run these locally
+please see the section Running `buscadoR` searches locally”.
+
+This R package assumes that you have already performed those searches
+and have the necessary files to hand.
 
 ## Installation
 
@@ -20,144 +34,43 @@ You can install buscadoR from [GitHub](https://github.com/) with:
 devtools::install_github("TeamMacLean/buscadoR")
 ```
 
-## Performing the web searches
+## Compiling the results, classifying the proteins
 
-To start the searches with a new protein file you need to supply a FASTA
-file of protein sequences, your valid email address and specify a
-restart filename for use later.
+The search results can be combined and the RLK classes predicted with
+the `buscar` function. Pass in all the input files, including the
+original FASTA file.
+
+Note that you can pass either gzipped (`.gz`) files or plain text files.
 
 ``` r
 library(buscadoR)
-fasta_sequences <- "true_positive.fa"
-saved_progress <- "saved_progress.RDS"
-searches <- buscar(protein_file = fasta_sequences, restart_file = saved_progress, email="dan.maclean@tsl.ac.uk")
-```
 
-    restart_file saved_progress.RDS doesn't exist, interpreting this as new job with true_positive.fa as input
+fasta_file <- "arabidopsis_proteome.fa"
+hmmer_file <- "hmmer_results.txt.gz"
+deeptmhmm_file <- "deeptmhmm_results.txt.gz"
+blast_file <- "blast_results.txt.gz"
 
-
-    Building a new DB, current time: 03/31/2022 11:14:26
-    New DB name:   /var/folders/22/kjdvv_k14cj1m6hq5hl527qw8__5qg/T/RtmpACGE8i/d33a8d44877492693f49a475ebdb317d/buscador_8f593ae81e14.fa
-    New DB title:  /var/folders/22/kjdvv_k14cj1m6hq5hl527qw8__5qg/T//RtmpACGE8i/d33a8d44877492693f49a475ebdb317d//buscador_8f593ae81e14.fa
-    Sequence type: Protein
-    Keep MBits: T
-    Maximum file size: 1000000000B
-    Adding sequences from FASTA; added 6 sequences in 0.00922894 seconds.
-
-The process will run the searches. Phobius searches are really quick.
-Ectodomain BLASTs are done locally. PFAMScan is more complicated so can
-take a while. By default, the process will wait just one second after
-submission is complete for PFAM before quitting and writing the progress
-to the `restart_file` you specified.
-
-In most cases it is expected that the searches are done in two steps. So
-after having waited a while to give PFAMScan chance to run your
-sequences, you can return and check the status with the same call to
-`buscar()` though only the `restart_file` is needed as the parameters
-are carried over from the initial job.
-
-You’ll see a status update and a reminder to come back later if things
-aren’t done yet. You can repeat this step as often as you like. Search
-results can be retrieved from the PFAMScan server for up to 7 days.
-
-``` r
-searches <- buscar(restart_file = saved_progress)
-```
-
-    restart_file saved_progress.fa found, interpreting this as a restarted job with existing protein set.
-    Retrieving the results for query pfamscan-R20220331-111414-0032-9483591-p1m...Done!
-    Done 1 of 1 PFAMScan jobs at ebi.ac.uk
-
-You’ll get a notice like this if things aren’t done yet
-
-    restart_file saved_progress.fa found, interpreting this as a restarted job with existing protein set.
-    Retrieving the results for query pfamscan-R20220331-111414-0032-9483591-p1m...Retrieving the query id pfamscan-R20220331-111414-0032-9483591-p1m did not worked: <?xml version="1.0" encoding="UTF-8"?>
-    <error>
-      <description>Job 'pfamscan-R20220331-111414-0032-9483591-p1m' is still running</description>
-    </error>
-
-    Done 0 of 1 PFAMScan jobs at ebi.ac.uk
-    PFAMScan jobs not complete at ebi.ac.uk. Please restart later.
-
-You can check whether the searches have all been retrieved with
-`completed()` and check all steps are done as follows, getting `TRUE`
-from the last expression indicates all are done.
-
-``` r
-completed(searches)
-#>                           result completed
-#> 1                 phobius_search      TRUE
-#> 2                 pfam_retrieval      TRUE
-#> 3              ectodomain_search      TRUE
-#> 4              lrr_rp_annotation      TRUE
-#> 5              lrr_rk_annotation      TRUE
-#> 6 lrr_rp_rk_with_ecto_annotation      TRUE
-#> 7          non_lrr_rp_annotation      TRUE
-#> 8          non_lrr_rk_annotation      TRUE
-all(completed(searches)$completed)
-#> [1] TRUE
-```
-
-**IMPORTANT NOTE**
-
-If the `restart_file` exists then a restart will *always* be attempted,
-you’ll need to make sure the file doesn’t exist if you want to start the
-process from the beginning.
-
-### Saving a raw search results file
-
-When the job is done and all are retrieved, you can manually save the
-search results to a binary file with `saveRDS()` for loading again later
-with the built-in `readRDS()`. This is basically a dump of the searches
-and isn’t the same as saving the actual found receptor information, that
-is done later. Saving the whole search is just a safety measure in case
-the computer crashes while you’re inspecting the results.
-
-``` r
-saveRDS(searches, "a_saved_search.rds")
-earlier_search <- readRDS("a_saved_search.rds")
-```
-
-### Forcing the process to wait longer for the PFAMScan server to complete
-
-You may wish not to use the restart and just have the `buscar()` process
-sit there and wait for the PFAMScan wait, this may be useful for simple
-cases with just a few (\<20) proteins. Its effectiveness will depend on
-the reliability of the internet connection you have. The `buscar()`
-option `maxchecktime` sets the time (in seconds) that the process will
-wait before giving up, `wait` sets how long the process waits between
-checks on the server. Note the restart file is still needed.
-
-``` r
-searches <- buscar(protein_file = "true_positive.fa", restart_file = "saved_progress.rds", email="my_name@my.org", maxchecktime=600, wait=60)
-```
-
-### More reporting on progress
-
-If you want more information on progress, which is often very useful,
-you can set `progress` to `TRUE` in the initial `buscar()` call
-
-``` r
-searches <- buscar(protein_file = fasta_sequences, restart_file = saved_progress, email="my_name@my.org", progress = TRUE)
+b <- buscar(hmmer = hmmer_file, deeptmhmm = deeptmhmm_file, blast = blast_file, fasta = fasta_file)
 ```
 
 ## Examining the results
 
-The raw results in the saved search object aren’t too useful on their
-own, so there is a set of helper functions to help you extract data in a
-useable result.
+A set of helper functions to help you extract data into a useable result
+is provided.
 
 A summary table of each type found can be generated
 
 ``` r
-mesa(searches)
+mesa(b)
 ```
 
-| b_type     | count |
-|:-----------|------:|
-| lrr_rk     |     2 |
-| lrr_rp     |     1 |
-| non_lrr_rp |     1 |
+| b_type              | count |
+|:--------------------|------:|
+| lrr_rk              |   196 |
+| lrr_rp              |    66 |
+| lrr_rp_rk_with_ecto |    50 |
+| non_lrr_rp          |    64 |
+| non_lrr_rk          |    NA |
 
 BuscadoR RLK Finding results
 
@@ -165,128 +78,79 @@ A dataframe of one row per receptor protein found (ideal for exporting)
 can be created
 
 ``` r
-as.data.frame(searches)
-#> # A tibble: 4 × 10
-#>   Name          sp_cut_site tm_start tm_end pfams_hit pfams_acc pfams_loc b_type
-#>   <chr>         <chr>          <dbl>  <dbl> <chr>     <chr>     <chr>     <chr> 
-#> 1 transcript_1… 29               235    259 LRRNT_2   PF08263.… 36-79     lrr_rp
-#> 2 transcript_1… 35               591    611 LRRNT_2;… PF08263.… 34-74;15… lrr_rk
-#> 3 transcript_1… 39               644    667 LRR_8;Pk… PF13855.… 324-381;… lrr_rk
-#> 4 transcript_1… 16               262    285 Malectin  PF11721.8 60-245    non_l…
-#> # … with 2 more variables: ectos_hit <chr>, ectos_coord <chr>
+as.data.frame(b)
+#> # A tibble: 376 × 10
+#>    seq_name    sp_cut_site tm_start tm_end pfams_hit  pfams_acc pfams_loc b_type
+#>    <chr>             <int>    <int>  <int> <chr>      <chr>     <chr>     <chr> 
+#>  1 AT1G17240.1          44      708    728 LRR_8;LRR… PF13855.… 94-150;1… lrr_rp
+#>  2 AT1G17250.1          50      726    738 LRR_8;LRR… PF13855.… 121-157;… lrr_rp
+#>  3 AT1G25570.1          23      554    574 LRR_4;LRR… PF12799.… 443-460;… lrr_rp
+#>  4 AT1G28340.1          22      550    570 LRR_8;LRR… PF13855.… 426-458;… lrr_rp
+#>  5 AT1G34290.1          26      170    190 LRR_4;LRR… PF12799.… 94-130;7… lrr_rp
+#>  6 AT1G45616.1          29      951    971 LRR_8;LRR… PF13855.… 117-157;… lrr_rp
+#>  7 AT1G58190.2          27      985   1005 LRR_8;LRR… PF13855.… 123-162;… lrr_rp
+#>  8 AT1G65380.1          25      687    707 LRR_8;LRR… PF13855.… 84-133;1… lrr_rp
+#>  9 AT1G69990.1          18      214    234 LRR_8;LRR… PF13855.… 68-101;1… lrr_rp
+#> 10 AT1G71390.1          25      740    760 LRR_8;LRR… PF13855.… 79-114;1… lrr_rp
+#> # … with 366 more rows, and 2 more variables: ectos_hit <chr>,
+#> #   ectos_coord <chr>
 ```
 
-Tidy format dataframe of each type of receptor protein can be extracted
+A tidy format dataframe of each type of receptor protein can be
+extracted
 
 ``` r
-lrr_rp(searches)
-#>                Name cut_site tm_start tm_end     hit        acc    eval   type
-#> 1 transcript_102826       29      235    259 LRRNT_2 PF08263.12 0.00072 Family
-#>   seq_from seq_to hit_from hit_to base_acc   b_type pfam_length
-#> 1       36     79        2     41  PF08263 LRR_PFAM          43
-#also lrr_rk(), non_lrr_rp(), non_lrr_rk(), lrr_rp_rk_with_ecto()
+lrr_rp(b)
+#> # A tibble: 3,244 × 14
+#>    seq_name cut_site tm_start tm_end hit   acc     eval seq_from seq_to hit_from
+#>    <chr>       <int>    <int>  <int> <chr> <chr>  <dbl>    <dbl>  <dbl>    <int>
+#>  1 AT1G172…       44      708    728 LRR_8 PF13… 2  e-7       94    150        5
+#>  2 AT1G172…       44      708    728 LRR_8 PF13… 1.5e-6      115    181        2
+#>  3 AT1G172…       44      708    728 LRR_8 PF13… 2.3e-2      171    233        3
+#>  4 AT1G172…       44      708    728 LRR_8 PF13… 4.6e-6      246    305        2
+#>  5 AT1G172…       44      708    728 LRR_8 PF13… 9.6e-5      315    353       23
+#>  6 AT1G172…       44      708    728 LRR_8 PF13… 2.1e-6      362    402       21
+#>  7 AT1G172…       44      708    728 LRR_8 PF13… 1.9e-1      406    450       16
+#>  8 AT1G172…       44      708    728 LRR_8 PF13… 1  e-7      470    529        2
+#>  9 AT1G172…       44      708    728 LRR_8 PF13… 7.5e-7      581    636        6
+#> 10 AT1G172…       44      708    728 LRR_8 PF13… 2.9e-5      602    660        3
+#> # … with 3,234 more rows, and 4 more variables: hit_to <int>, base_acc <chr>,
+#> #   b_type <chr>, pfam_length <dbl>
 ```
+
+also `lrr_rk()`, `non_lrr_rp()`, `non_lrr_rk()`, `lrr_rp_rk_with_ecto()`
 
 Raw search results from the databases can be extracted
 
 ``` r
-pfam_results(searches)
-#>                                                        seq_name         hit
-#> pfamscan-R20220331-111414-0032-9483591-p1m.1  transcript_103865     LRRNT_2
-#> pfamscan-R20220331-111414-0032-9483591-p1m.2  transcript_103865       LRR_8
-#> pfamscan-R20220331-111414-0032-9483591-p1m.3  transcript_103865       LRR_8
-#> pfamscan-R20220331-111414-0032-9483591-p1m.4  transcript_103865       LRR_8
-#> pfamscan-R20220331-111414-0032-9483591-p1m.5  transcript_103865     Pkinase
-#> pfamscan-R20220331-111414-0032-9483591-p1m.6  transcript_102826     LRRNT_2
-#> pfamscan-R20220331-111414-0032-9483591-p1m.7  transcript_115185     Pkinase
-#> pfamscan-R20220331-111414-0032-9483591-p1m.8  transcript_103278    Malectin
-#> pfamscan-R20220331-111414-0032-9483591-p1m.9  transcript_121308 Pkinase_Tyr
-#> pfamscan-R20220331-111414-0032-9483591-p1m.10 transcript_130761       LRR_8
-#> pfamscan-R20220331-111414-0032-9483591-p1m.11 transcript_130761    Malectin
-#> pfamscan-R20220331-111414-0032-9483591-p1m.12 transcript_130761     Pkinase
-#>                                                      acc    eval   type
-#> pfamscan-R20220331-111414-0032-9483591-p1m.1  PF08263.12 3.1e-11 Family
-#> pfamscan-R20220331-111414-0032-9483591-p1m.2   PF13855.6 2.2e-06 Repeat
-#> pfamscan-R20220331-111414-0032-9483591-p1m.3   PF13855.6 9.0e-07 Repeat
-#> pfamscan-R20220331-111414-0032-9483591-p1m.4   PF13855.6 3.0e-09 Repeat
-#> pfamscan-R20220331-111414-0032-9483591-p1m.5  PF00069.25 3.4e-45 Domain
-#> pfamscan-R20220331-111414-0032-9483591-p1m.6  PF08263.12 7.2e-04 Family
-#> pfamscan-R20220331-111414-0032-9483591-p1m.7  PF00069.25 9.3e-47 Domain
-#> pfamscan-R20220331-111414-0032-9483591-p1m.8   PF11721.8 4.0e-40 Domain
-#> pfamscan-R20220331-111414-0032-9483591-p1m.9  PF07714.17 9.0e-48 Domain
-#> pfamscan-R20220331-111414-0032-9483591-p1m.10  PF13855.6 2.7e-06 Repeat
-#> pfamscan-R20220331-111414-0032-9483591-p1m.11  PF11721.8 1.2e-42 Domain
-#> pfamscan-R20220331-111414-0032-9483591-p1m.12 PF00069.25 2.8e-46 Domain
-#>                                               seq_from seq_to hit_from hit_to
-#> pfamscan-R20220331-111414-0032-9483591-p1m.1        34     74        2     41
-#> pfamscan-R20220331-111414-0032-9483591-p1m.2       151    210        2     61
-#> pfamscan-R20220331-111414-0032-9483591-p1m.3       271    329        3     61
-#> pfamscan-R20220331-111414-0032-9483591-p1m.4       389    449        1     61
-#> pfamscan-R20220331-111414-0032-9483591-p1m.5       662    917        5    259
-#> pfamscan-R20220331-111414-0032-9483591-p1m.6        36     79        2     41
-#> pfamscan-R20220331-111414-0032-9483591-p1m.7       328    596        2    259
-#> pfamscan-R20220331-111414-0032-9483591-p1m.8        60    245        3    165
-#> pfamscan-R20220331-111414-0032-9483591-p1m.9       691    960        4    258
-#> pfamscan-R20220331-111414-0032-9483591-p1m.10      324    381        2     61
-#> pfamscan-R20220331-111414-0032-9483591-p1m.11      435    620        2    165
-#> pfamscan-R20220331-111414-0032-9483591-p1m.12      705    965        3    256
-#>                                               base_acc       b_type pfam_length
-#> pfamscan-R20220331-111414-0032-9483591-p1m.1   PF08263     LRR_PFAM          40
-#> pfamscan-R20220331-111414-0032-9483591-p1m.2   PF13855     LRR_PFAM          59
-#> pfamscan-R20220331-111414-0032-9483591-p1m.3   PF13855     LRR_PFAM          58
-#> pfamscan-R20220331-111414-0032-9483591-p1m.4   PF13855     LRR_PFAM          60
-#> pfamscan-R20220331-111414-0032-9483591-p1m.5   PF00069  KINASE_PFAM         255
-#> pfamscan-R20220331-111414-0032-9483591-p1m.6   PF08263     LRR_PFAM          43
-#> pfamscan-R20220331-111414-0032-9483591-p1m.7   PF00069  KINASE_PFAM         268
-#> pfamscan-R20220331-111414-0032-9483591-p1m.8   PF11721 NON_LRR_PFAM         185
-#> pfamscan-R20220331-111414-0032-9483591-p1m.9   PF07714  KINASE_PFAM         269
-#> pfamscan-R20220331-111414-0032-9483591-p1m.10  PF13855     LRR_PFAM          57
-#> pfamscan-R20220331-111414-0032-9483591-p1m.11  PF11721 NON_LRR_PFAM         185
-#> pfamscan-R20220331-111414-0032-9483591-p1m.12  PF00069  KINASE_PFAM         260
-#also phobius_results(), ecto_results()
+hmmer_results(b)
+#> # A tibble: 22,890 × 11
+#>    seq_name   hit   acc     eval seq_from seq_to hit_from hit_to base_acc b_type
+#>    <chr>      <chr> <chr>  <dbl>    <dbl>  <dbl>    <int>  <int> <chr>    <chr> 
+#>  1 AT1G17600… LRR_4 PF12… 1.5e-1      607    646        5     42 PF12799  LRR_P…
+#>  2 AT1G17600… LRR_4 PF12… 8.7e-2      626    662        1     35 PF12799  LRR_P…
+#>  3 AT1G17600… LRR_4 PF12… 4  e+0      649    679        1     26 PF12799  LRR_P…
+#>  4 AT1G17600… LRR_4 PF12… 2.4e-4      798    835        3     42 PF12799  LRR_P…
+#>  5 AT1G17600… LRR_4 PF12… 7.2e-4      843    883        2     43 PF12799  LRR_P…
+#>  6 AT1G17600… LRR_4 PF12… 9.9e-3      893    931        3     42 PF12799  LRR_P…
+#>  7 AT1G17600… LRR_4 PF12… 2.4e-3      915    958        1     42 PF12799  LRR_P…
+#>  8 AT1G17600… LRR_3 PF07… 2.5e-8      604    622        1     19 PF07725  LRR_P…
+#>  9 AT1G17600… LRR_8 PF13… 5.6e-3      605    659        3     59 PF13855  LRR_P…
+#> 10 AT1G17600… LRR_8 PF13… 3.5e-6      797    852        2     59 PF13855  LRR_P…
+#> # … with 22,880 more rows, and 1 more variable: pfam_length <dbl>
 ```
 
-Each set of found proteins can be rendered as a plot
+also `deeptmhmm_results()`, `ecto_results()`
+
+Each set of putative proteins can be rendered as a plot
 
 ``` r
-dibujar(searches, which = "lrr_rp")
-#> Loading required package: Biostrings
-#> Loading required package: BiocGenerics
-#> 
-#> Attaching package: 'BiocGenerics'
-#> The following objects are masked from 'package:stats':
-#> 
-#>     IQR, mad, sd, var, xtabs
-#> The following objects are masked from 'package:base':
-#> 
-#>     anyDuplicated, append, as.data.frame, basename, cbind, colnames,
-#>     dirname, do.call, duplicated, eval, evalq, Filter, Find, get, grep,
-#>     grepl, intersect, is.unsorted, lapply, Map, mapply, match, mget,
-#>     order, paste, pmax, pmax.int, pmin, pmin.int, Position, rank,
-#>     rbind, Reduce, rownames, sapply, setdiff, sort, table, tapply,
-#>     union, unique, unsplit, which.max, which.min
-#> Loading required package: S4Vectors
-#> Loading required package: stats4
-#> 
-#> Attaching package: 'S4Vectors'
-#> The following objects are masked from 'package:base':
-#> 
-#>     expand.grid, I, unname
-#> Loading required package: IRanges
-#> Loading required package: XVector
-#> Loading required package: GenomeInfoDb
-#> 
-#> Attaching package: 'Biostrings'
-#> The following object is masked from 'package:base':
-#> 
-#>     strsplit
+dibujar(b, which = "lrr_rp")
 ```
 
-<img src="man/figures/README-unnamed-chunk-13-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-9-1.png" width="100%" />
 
-``` r
-#also use "lrr_rk", "non_lrr_rp", "non_lrr_rk", "lrr_rp_rk_with_ecto"
-```
+also use “lrr_rk”, “non_lrr_rp”, “non_lrr_rk”, “lrr_rp_rk_with_ecto”
 
 ## Exporting results
 
@@ -294,14 +158,14 @@ A dataframe of one row per receptor protein can be created and written
 out in the usual way
 
 ``` r
-res <- as.data.frame(searches)
+res <- as.data.frame(b)
 readr::write_csv(res, "my_results.csv")
 ```
 
 Annotated FASTA sequences can be exported
 
 ``` r
-write_seqs(searches, "my_seqs.fa")
+write_seqs(b, "my_seqs.fa")
 ```
 
 ## Other Stuff
@@ -312,7 +176,7 @@ can be created for further plotting work. Note the plot is a `ggplot2`
 object and can be styled using that package too.
 
 ``` r
-dp <- as.drawProteins(searches)
+dp <- as.drawProteins(b)
 ```
 
 The definitions used for the classification can be returned
@@ -324,5 +188,39 @@ definiciones(which="lrr_rp")
 #>      * Exactly one Transmembrane Domain according to Phobius.
 #>      * At least one of the `lrr_pfams` according to PFAMscan.
 #>      * The Transmembrane domain should be closer to the C terminal than the end of the pfam hit.
-#also use "lrr_rk", "non_lrr_rp", "non_lrr_rk", "lrr_rp_rk_with_ecto", "all"
 ```
+
+also use “lrr_rk”, “non_lrr_rp”, “non_lrr_rk”, “lrr_rp_rk_with_ecto”,
+“all”
+
+## Running `buscadoR` searches locally
+
+If you wish to run the searches locally the output formats for each
+program need to be set carefully to work with `buscar()`.
+
+### `hmmer`
+
+The PFAM domain hmms used for the `hmmer` search are provided here as a
+file
+[buscador_pfam_hmm](https://github.com/TeamMacLean/buscador_hlp/blob/main/buscador.hmm).
+Alternatively you can parse the latest versions from the PFAM-A
+database. The required IDs can be listed from `buscadoR` as they are
+held in the data objects `lrr_pfam`, `non_lrr_pfam` and `kinase_pfams`.
+
+When running `hmmscan` use `--domtblout` as the output option.
+
+### `deeptmhmm`
+
+There are no options for `deeptmhmm`. When running this locally, a
+single output file is created for each sequence. Just concatenate these
+into one file for input into `buscar()`
+
+### `blastp`
+
+The ecto-domains for use as query sequence in the `blastp` are available
+here as a fasta
+[buscador_ecto_fasta](https://github.com/TeamMacLean/buscador_hlp/blob/main/At_ecto.fa)
+
+Use `blastp` with these as the query and the proteins of interest as the
+subject, select `outfmt 6`. The resulting text file can be used as input
+to `buscar()`
