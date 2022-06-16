@@ -20,6 +20,8 @@ buscar(
 
 \item{blast}{results file from blastp -outfmt 6 (as. gz or plain text)}
 
+\item{fasta}{original fasta file used in searches}
+
 \item{hmmer_eval_cutoff}{evalue cutoff for hmmer search}
 
 \item{progress}{show progress bar (not implemented)}

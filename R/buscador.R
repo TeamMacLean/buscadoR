@@ -3,6 +3,7 @@
 #' @param deeptmhmm results file from deeptmhmm (as .gz or plain text)
 #' @param hmmer results file from hmmer --domtblout (as .gz or plain text)
 #' @param blast results file from blastp -outfmt 6 (as. gz or plain text)
+#' @param fasta original fasta file used in searches
 #' @param hmmer_eval_cutoff evalue cutoff for hmmer search
 #' @param progress show progress bar (not implemented)
 #'
