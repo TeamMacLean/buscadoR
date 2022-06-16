@@ -1,5 +1,13 @@
 
-
+#' combine the search files and perform the RLK annotation
+#' @param deeptmhmm results file from deeptmhmm (as .gz or plain text)
+#' @param hmmer results file from hmmer --domtblout (as .gz or plain text)
+#' @param blast results file from blastp -outfmt 6 (as. gz or plain text)
+#' @param hmmer_eval_cutoff evalue cutoff for hmmer search
+#' @param progress show progress bar (not implemented)
+#'
+#' @return busc object
+#' @export
 buscar <- function(deeptmhmm = NULL, hmmer=NULL, blast=NULL, fasta=NULL, hmmer_eval_cutoff = 20,  progress=TRUE ) {
 
 

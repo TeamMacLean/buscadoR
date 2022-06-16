@@ -3,6 +3,7 @@
 S3method(as.data.frame,buscador)
 export("%>%")
 export(as.drawProteins)
+export(buscar)
 export(deeptmhmm_results)
 export(definiciones)
 export(dibujar)
