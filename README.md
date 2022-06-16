@@ -69,8 +69,8 @@ mesa(b)
 | lrr_rk              |   196 |
 | lrr_rp              |    66 |
 | lrr_rp_rk_with_ecto |    50 |
+| non_lrr_rk          |   201 |
 | non_lrr_rp          |    64 |
-| non_lrr_rk          |    NA |
 
 BuscadoR RLK Finding results
 
@@ -79,7 +79,7 @@ can be created
 
 ``` r
 as.data.frame(b)
-#> # A tibble: 376 × 10
+#> # A tibble: 577 × 10
 #>    seq_name    sp_cut_site tm_start tm_end pfams_hit  pfams_acc pfams_loc b_type
 #>    <chr>             <int>    <int>  <int> <chr>      <chr>     <chr>     <chr> 
 #>  1 AT1G17240.1          44      708    728 LRR_8;LRR… PF13855.… 94-150;1… lrr_rp
@@ -92,7 +92,7 @@ as.data.frame(b)
 #>  8 AT1G65380.1          25      687    707 LRR_8;LRR… PF13855.… 84-133;1… lrr_rp
 #>  9 AT1G69990.1          18      214    234 LRR_8;LRR… PF13855.… 68-101;1… lrr_rp
 #> 10 AT1G71390.1          25      740    760 LRR_8;LRR… PF13855.… 79-114;1… lrr_rp
-#> # … with 366 more rows, and 2 more variables: ectos_hit <chr>,
+#> # … with 567 more rows, and 2 more variables: ectos_hit <chr>,
 #> #   ectos_coord <chr>
 ```
 

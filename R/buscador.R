@@ -218,7 +218,7 @@ as.data.frame.buscador <- function(x,...){
 
   dplyr::bind_rows(
     list(
-      con_lrr_rp, con_lrr_rk, con_non_lrr_rp, con_lrr_rk, con_lrr_rp_rk_ecto
+      con_lrr_rp, con_lrr_rk, con_non_lrr_rp, con_non_lrr_rk, con_lrr_rp_rk_ecto
     )
   ) %>%
     dplyr::distinct()
