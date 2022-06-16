@@ -18,12 +18,13 @@ Imports:
     knitr,
     magrittr,
     readr,
-    rhmmer,
+    rhmmer (>= 0.2.0),
     rlang,
     stringr,
     tidyr
 RoxygenNote: 7.1.2
-Remotes: 
+Remotes:  
+    github/arendsee
 Depends: 
     R (>= 4.1.0)
 biocViews:
