@@ -8,6 +8,8 @@ parse_raw_hmmer(hmmer_raw, pfam_eval)
 }
 \arguments{
 \item{hmmer_raw}{complete hmmer result}
+
+\item{pfam_eval}{pfam cutoff value}
 }
 \value{
 dataframe

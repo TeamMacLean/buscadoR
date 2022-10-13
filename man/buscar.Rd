@@ -2,15 +2,14 @@
 % Please edit documentation in R/buscador.R
 \name{buscar}
 \alias{buscar}
-\title{combine the search files and perform the RLK annotation}
+\title{check and combine the search files and perform the protein annotation}
 \usage{
 buscar(
   deeptmhmm = NULL,
   hmmer = NULL,
   blast = NULL,
   fasta = NULL,
-  hmmer_eval_cutoff = 20,
-  progress = TRUE
+  hmmer_eval_cutoff = 20
 )
 }
 \arguments{
@@ -23,12 +22,10 @@ buscar(
 \item{fasta}{original fasta file used in searches}
 
 \item{hmmer_eval_cutoff}{evalue cutoff for hmmer search}
-
-\item{progress}{show progress bar (not implemented)}
 }
 \value{
 busc object
 }
 \description{
-combine the search files and perform the RLK annotation
+check and combine the search files and perform the protein annotation
 }

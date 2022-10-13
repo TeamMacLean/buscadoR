@@ -7,7 +7,7 @@
 process_deeptmhmm(dtm)
 }
 \arguments{
-\item{dtm}{parsed deeptmhmm result from `process_raw_deeptmhmm`}
+\item{dtm}{parsed deeptmhmm result from `parse_raw_deeptmhmm`}
 }
 \value{
 character vector

@@ -2,10 +2,30 @@
 % Please edit documentation in R/buscador.R
 \name{new_buscador}
 \alias{new_buscador}
-\title{create the buscador object}
+\title{create the buscador object, do the classifications}
 \usage{
-new_buscador(...)
+new_buscador(
+  deeptmhmm_file = NULL,
+  hmmer_file = NULL,
+  blast_file = NULL,
+  fasta_file = NULL,
+  hmmer_eval_cutoff = 20
+)
+}
+\arguments{
+\item{deeptmhmm_file}{results file from deeptmhmm (as .gz or plain text)}
+
+\item{hmmer_file}{results file from hmmer --domtblout (as .gz or plain text)}
+
+\item{blast_file}{results file from blastp -outfmt 6 (as. gz or plain text)}
+
+\item{fasta_file}{original fasta file used in searches}
+
+\item{hmmer_eval_cutoff}{evalue cutoff for hmmer search}
+}
+\value{
+busc object
 }
 \description{
-create the buscador object
+create the buscador object, do the classifications
 }

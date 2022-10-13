@@ -73,43 +73,35 @@ A summary table of each type found can be generated
 mesa(b)
 ```
 
-A dataframe of one row per receptor protein found (ideal for exporting) can be created
+A tibble (dataframe) of one row per receptor protein found (ideal for exporting) can be created
 
 ```{r}
-as.data.frame(b)
+as_tibble(b)
 ```
 
-A tidy format dataframe of each type of receptor protein can be extracted 
-
-```{r}
-lrr_rp(b)
-
-```
-
-also `lrr_rk()`, `non_lrr_rp()`, `non_lrr_rk()`, `lrr_rp_rk_with_ecto()`
 
 Raw search results from the databases can be extracted
 
 ```{r}
-hmmer_results(b)
+pfam_results(b)
 ```
 
-also `deeptmhmm_results()`, `ecto_results()`
+also `deeptmhmm_results()`, `blast_results()`
 
 Each set of putative proteins can be rendered as a plot
 
 ```{r, message=FALSE, fig.height=8}
-dibujar(b, which = "lrr_rp")
+dibujar(b, which = "TM-PROTEIN")
 ```
 
-also use "lrr_rk", "non_lrr_rp", "non_lrr_rk", "lrr_rp_rk_with_ecto"
+also use `LRR-RK, LRR-RP, LRR+OTHER-RK, LRR+OTHER-RP, OTHER-RK, OTHER-RP, TM-KINASE, TM-PROTEIN, unclassified_RK, unclassified_RP`
 
 ## Exporting results
 
-A dataframe of one row per receptor protein can be created and written out in the usual way
+A tibble (dataframe) of one row per receptor protein can be created and written out
 
 ```{r, eval=FALSE}
-res <- as.data.frame(b)
+res <- as_tibble(b)
 readr::write_csv(res, "my_results.csv")
 ```
 
@@ -124,15 +116,15 @@ write_seqs(b, "my_seqs.fa")
 A dataframe compatible with the `drawProteins` package [here on bioconductor](https://bioconductor.org/packages/release/bioc/vignettes/drawProteins/inst/doc/drawProteins_BiocStyle.html) can be created for further plotting work. Note the plot is a `ggplot2` object and can be styled using that package too. 
 
 ```{r, eval=FALSE}
-dp <- as.drawProteins(b)
+dp <- as_drawProteins(b)
 ```
 
 The definitions used for the classification can be returned
 
 ```{r}
-definiciones(which="lrr_rp")
+definiciones()
 ```
-also use "lrr_rk", "non_lrr_rp", "non_lrr_rk", "lrr_rp_rk_with_ecto", "all"
+
 
 
 ## Running `buscadoR` searches locally

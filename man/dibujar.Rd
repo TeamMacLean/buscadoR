@@ -4,12 +4,12 @@
 \alias{dibujar}
 \title{draw each found proteins of a given receptor type.}
 \usage{
-dibujar(b, which = "lrr_rp", label_domains = FALSE)
+dibujar(b, which = "LRR-RP", label_domains = FALSE)
 }
 \arguments{
 \item{b}{`buscador` search object returned from `buscar()`}
 
-\item{which}{the receptor type to return, one of 'lrr_rp', 'lrr_rk', 'non_lrr_rp', 'non_lrr_rk', 'lrr_rp_ecto'}
+\item{which}{the receptor type to return, one of}
 
 \item{label_domains}{write a label on the domain}
 }

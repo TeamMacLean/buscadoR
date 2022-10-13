@@ -1,15 +1,14 @@
 
-#' combine the search files and perform the RLK annotation
+#' check and combine the search files and perform the protein annotation
 #' @param deeptmhmm results file from deeptmhmm (as .gz or plain text)
 #' @param hmmer results file from hmmer --domtblout (as .gz or plain text)
 #' @param blast results file from blastp -outfmt 6 (as. gz or plain text)
 #' @param fasta original fasta file used in searches
 #' @param hmmer_eval_cutoff evalue cutoff for hmmer search
-#' @param progress show progress bar (not implemented)
 #'
 #' @return busc object
 #' @export
-buscar <- function(deeptmhmm = NULL, hmmer=NULL, blast=NULL, fasta=NULL, hmmer_eval_cutoff = 20,  progress=TRUE ) {
+buscar <- function(deeptmhmm = NULL, hmmer=NULL, blast=NULL, fasta=NULL, hmmer_eval_cutoff = 20) {
 
 
 
@@ -28,112 +27,187 @@ buscar <- function(deeptmhmm = NULL, hmmer=NULL, blast=NULL, fasta=NULL, hmmer_e
     )
 
 
-  busc <- get_classes(busc)
-
-
  return(busc)
 }
 
 
-get_classes <- function(busc) {
 
+#' work out whether a sequence has kinase pfams according to criteria
+#' @param sn vector of sequence names with TM and SP
+#' @param b buscador object
+#' @importFrom rlang .data
+has_kinase_pfam <- function(sn, b) {
+  seqs_w_kinase_pfam_after_tm <- dplyr::left_join(b$pfams, b$tm_signal_pep, by = c("seq_name") ) %>%
+    dplyr::filter(.data$b_type == "KINASE_PFAM",
+                  .data$pfam_length > 250,
+                  .data$seq_from > .data$tm_start)
 
-  deep_hmmer <- dplyr::left_join(busc$deeptmhmm, busc$hmmer, by = c("seq_name")) %>%
-    dplyr::distinct()
+  sn %in% seqs_w_kinase_pfam_after_tm$seq_name
 
-
-  ## get the lrr_rp class
-  busc$lrr_rp <- deep_hmmer %>%
-    dplyr::filter(.data$b_type == "LRR_PFAM", .data$tm_start > .data$seq_to)
-
-
-  # # get the lrr_rk class
-  lrr_rk <- deep_hmmer %>%
-    dplyr::filter(.data$seq_name %in% busc$lrr_rp$seq_name,
-                  .data$b_type == "KINASE_PFAM",
-                  .data$pfam_length >= 250, .data$tm_start < .data$seq_from) %>%
-    dplyr::distinct()
-  rows_to_add <- dplyr::filter(busc$lrr_rp, .data$seq_name %in% lrr_rk$seq_name )
-  busc$lrr_rk <- dplyr::bind_rows(rows_to_add, lrr_rk)
-
-  # # remove the lrr_rps that became the lrr_rks from the lrr_rp object
-  busc$lrr_rp <- busc$lrr_rp %>%
-    dplyr::filter(!.data$seq_name %in% busc$lrr_rk$seq_name)
-
-
-  # get the non_lrr_rp class
-  busc$non_lrr_rp <- deep_hmmer %>%
-    dplyr::filter(! .data$seq_name %in% c(busc$lrr_rp$seq_name, busc$lrr_rk),
-                  .data$b_type == "NON_LRR_PFAM", .data$seq_from < .data$tm_start ) %>%
-    dplyr::distinct()
-
-  # get the non_lrr_rk class
-  busc$non_lrr_rk <- deep_hmmer %>%
-    dplyr::filter(.data$seq_name %in% busc$non_lrr_rp$seq_name, .data$b_type == "KINASE_PFAM",
-                  .data$pfam_length >= 250, .data$tm_start < .data$seq_from) %>%
-    dplyr::distinct()
-
-  ## remove the non_lrr_rp that became non_lrr_rk
-  busc$non_lrr_rp <- busc$non_lrr_rp %>%
-    dplyr::filter(! .data$seq_name %in% busc$non_lrr_rk$seq_name)
-
-  # # get the ecto domain class
-  deep_hmmer_ecto <- dplyr::left_join(deep_hmmer, busc$ecto, by = c("seq_name") ) %>%
-    dplyr::distinct()
-
-   busc$lrr_rp_rk_with_ecto <- deep_hmmer_ecto %>%
-     dplyr::filter( .data$seq_name %in% c(busc$lrr_rp$seq_name, busc$lrr_rk),
-                    .data$percent_id > 50, .data$seq_start > .data$cut_site, .data$seq_start < .data$tm_start ) %>%
-     tidyr::unite(pfam_coord, .data$seq_from:.data$seq_to, sep="-", remove=FALSE)
-
-  return(busc)
 }
 
+#' work out whether a sequence has lrr pfams according to criteria
+#' @param sn vector of sequence names with TM and SP
+#' @param b buscador object
+#' @importFrom rlang .data
+has_lrr_pfam <- function(sn, b){
+
+  seqs_w_lrr_pfam_before_tm <- dplyr::left_join(b$pfams, b$tm_signal_pep, by = c("seq_name") ) %>%
+    dplyr::filter(.data$b_type == "LRR_PFAM",
+                  .data$seq_to < .data$tm_start)
+
+  sn %in% seqs_w_lrr_pfam_before_tm$seq_name
+
+}
+#' work out whether a sequence has other pfams according to criteria
+#' @param sn vector of sequence names with TM and SP
+#' @param b buscador object
+#' @importFrom rlang .data
+has_other_pfam <- function(sn,b) {
+  seqs_w_other_pfam_before_tm <- dplyr::left_join(b$pfams, b$tm_signal_pep, by = c("seq_name") ) %>%
+    dplyr::filter(.data$b_type == "OTHER_PFAM",
+                  .data$seq_to < .data$tm_start)
+  sn %in% seqs_w_other_pfam_before_tm$seq_name
+}
+
+#' work out whether a sequence has lrr blast according to criteria
+#' @param sn vector of sequence names with TM and SP
+#' @param b buscador object
+#' @importFrom rlang .data
+has_at_lrr_blast <- function(sn, b) {
+  seqs_w_blast_hit_before_tm <- dplyr::left_join(b$blasts, b$tm_signal_pep, by = c("seq_name")) %>%
+    dplyr::filter(.data$b_type == "LRR_BLAST",
+                  .data$seq_end < .data$tm_start)
+
+  sn %in% seqs_w_blast_hit_before_tm$seq_name
+}
+
+#' work out whether a sequence has other blast according to criteria
+#' @param sn vector of sequence names with TM and SP
+#' @param b buscador object
+#' @importFrom rlang .data
+has_at_other_blast <- function(sn, b){
+  seqs_w_blast_hit_before_tm <- dplyr::left_join(b$blasts, b$tm_signal_pep, by = c("seq_name")) %>%
+    dplyr::filter(.data$b_type == "OTHER_BLAST",
+                  .data$seq_end < .data$tm_start)
+
+  sn %in% seqs_w_blast_hit_before_tm$seq_name
+}
+#' work out whether a sequence has unspec blast according to criteria
+#' @param sn vector of sequence names with TM and SP
+#' @param b buscador object
+#' @importFrom rlang .data
+has_at_unspec_blast <- function(sn, b){
+
+  seqs_w_blast_hit_before_tm <- dplyr::left_join(b$blasts, b$tm_signal_pep, by = c("seq_name")) %>%
+    dplyr::filter(.data$b_type == "UNSPEC_BLAST",
+                  .data$seq_end < .data$tm_start)
+
+  sn %in% seqs_w_blast_hit_before_tm$seq_name
+}
+
+#' join the classification from the def matrix to the attributes determined
+#' by the blast hit
+#'
+#' @param b buscador pbkect
+#' @importFrom rlang .data
+classify_protein <- function(b) {
+  dplyr::left_join(b$matrix, class_def_matrix, by = c("SP", "TM", "kinase_pfam",
+                                                      "lrr_pfam", "other_pfam",
+                                                      "at_lrr_blast",
+                                                      "at_other_blast",
+                                                      "at_unspec_blast")) %>%
+    dplyr::select(.data$seq_name, .data$group, .data$evidence)
+
+}
+#' create the buscador object, do the classifications
+#' @param deeptmhmm_file results file from deeptmhmm (as .gz or plain text)
+#' @param hmmer_file results file from hmmer --domtblout (as .gz or plain text)
+#' @param blast_file results file from blastp -outfmt 6 (as. gz or plain text)
+#' @param fasta_file original fasta file used in searches
+#' @param hmmer_eval_cutoff evalue cutoff for hmmer search
+#'
+#' @return busc object
+#' @importFrom rlang .data
+new_buscador <- function(deeptmhmm_file = NULL, hmmer_file=NULL, blast_file=NULL, fasta_file=NULL, hmmer_eval_cutoff = 20){
 
 
-#' create the buscador object
-new_buscador <- function(...){
+  x <- list(deeptmhmm_file = deeptmhmm_file,
+            hmmer_file = hmmer_file,
+            blast_file = blast_file,
+            fasta_file=fasta_file,
+            hmmer_eval_cutoff = hmmer_eval_cutoff)
 
 
-  x <- list(...)
+  x[['tm_signal_pep']] <- parse_raw_deeptmhmm(x$deeptmhmm_file ) %>% process_deeptmhmm()
+  x[['pfams']] <- parse_raw_hmmer(x$hmmer_file, x$hmmer_eval_cutoff)
+  x[['blasts']] <- parse_raw_blast(x$blast_file)
 
-  x['lrr_rp'] = list(NULL)
-  x['lrr_rk'] = list(NULL)
-  x['lrr_rp_rk_with_ecto'] = list(NULL)
-  x['non_lrr_rp'] = list(NULL)
-  x['non_lrr_rk'] = list(NULL)
+
+
+  x[['matrix']] <- tibble::tibble(seq_name = x[['tm_signal_pep']][['seq_name']],
+                                SP = TRUE,
+                                TM = TRUE
+                                ) %>%
+    dplyr::mutate(kinase_pfam = has_kinase_pfam(.data$seq_name, x),
+                  lrr_pfam = has_lrr_pfam(.data$seq_name, x),
+                  other_pfam = has_other_pfam(.data$seq_name, x),
+                  at_lrr_blast = has_at_lrr_blast(.data$seq_name, x),
+                  at_other_blast = has_at_other_blast(.data$seq_name, x),
+                  at_unspec_blast = has_at_unspec_blast(.data$seq_name, x)
+                  )
+
+  x[['classes']] <- classify_protein(x)
 
   if(! is.null(x[['fasta_file']])) {
     x[['aastringset']] = Biostrings::readAAStringSet(x$fasta_file)
   }
 
-  x[['hmmer']] = parse_raw_hmmer(x$hmmer_file, x$hmmer_eval_cutoff)
-  x[['deeptmhmm']] = parse_raw_deeptmhmm(x$deeptmhmm_file ) %>% process_deeptmhmm()
-  x[['ecto']] = parse_raw_ecto(x$blast_file)
 
 
-
-
-
-  b <- structure(x,
-                 class = "buscador"
-  )
+  structure(x, class = "buscador")
 }
 
-#' turn the tidy long format dataframe into a wider sequence per line dataframe
+#' turn the tidy long format blast dataframe into a wider sequence per line dataframe
 #'
-#' @param df dataframe to condense
+#' @param b buscador object
 #' @return dataframe
 #' @importFrom rlang .data
-condense <- function(df) {
-  df %>%
-    tidyr::unite(pfam_coord, .data$seq_from:.data$seq_to, sep="-") %>%
+condense_blasts <- function(b) {
+  b$blasts %>%
+    dplyr::filter(.data$seq_name %in% b$classes$seq_name ) %>%
+    tidyr::unite("blast_coord", .data$seq_start:.data$seq_end, sep="-") %>%
     dplyr::distinct() %>%
     dplyr::group_by(.data$seq_name) %>%
     dplyr::summarise(
-      sp_cut_site = .data$cut_site,
-      .data$tm_start,
-      .data$tm_end,
+#      sp_cut_site = .data$cut_site,
+#      .data$tm_start,
+#      .data$tm_end,
+      blast_hit = paste0(.data$ecto, collapse=";"),
+#      pfams_acc = paste0(.data$acc, collapse=";"),
+      blast_loc = paste0(.data$blast_coord, collapse=";")
+    ) %>%
+    dplyr::distinct( )%>%
+    dplyr::ungroup()
+
+}
+
+
+#' turn the tidy long format pfams dataframe into a wider sequence per line dataframe
+#'
+#' @param b buscador objects
+#' @return dataframe
+#' @importFrom rlang .data
+condense_pfams <- function(b) {
+  b$pfams %>%
+    dplyr::filter(.data$seq_name %in% b$classes$seq_name) %>%
+    tidyr::unite("pfam_coord", .data$seq_from:.data$seq_to, sep="-") %>%
+    dplyr::distinct() %>%
+    dplyr::group_by(.data$seq_name) %>%
+    dplyr::summarise(
+      #      sp_cut_site = .data$cut_site,
+      #      .data$tm_start,
+      #      .data$tm_end,
       pfams_hit = paste0(.data$hit, collapse=";"),
       pfams_acc = paste0(.data$acc, collapse=";"),
       pfams_loc = paste0(.data$pfam_coord, collapse=";")
@@ -151,77 +225,32 @@ condense <- function(df) {
 #' @importFrom rlang .data
 mesa <- function(b){
 
-  if ("buscador" %in% class(b)){
-    df <- as.data.frame(b)
+  if (! "buscador" %in% class(b)){
+    stop("needs a buscador search object")
   }
 
-  if (! "b_type" %in% colnames(df) ){
-    stop("column b_type not found in data, cannot make table")
-  }
-
-
-  blank <- data.frame(
-    b_type = c("lrr_rp", "lrr_rk", "non_lrr_rp", "non_lrr_rk", "lrr_rp_rk_with_ecto")
-  )
-  dplyr::group_by(df, .data$b_type ) %>%
-    dplyr::summarise(count = dplyr::n() ) %>%
-    dplyr::ungroup() %>%
-    dplyr::full_join( blank, by="b_type") %>%
+  dplyr::group_by(b$classes, .data$group ) %>%
+    dplyr::tally() %>%
+    #dplyr::ungroup() %>%
+    #dplyr::full_join( blank, by="b_type") %>%
     knitr::kable(caption = "BuscadoR RLK Finding results")
 
 }
 
 
-#' generic for converting `buscador` search object to a dataframe
-#' @param x `buscador` object to coerce
-#' @param ... parameters for other functions
+#' converts `buscador` search object to a tibble
+#' @param b `buscador` object to coerce
 #' @export
-#' @importFrom rlang .data
-as.data.frame.buscador <- function(x,...){
+as_tibble <- function(b){
 
-  con_lrr_rp <- x$lrr_rp %>%
-    condense() %>%
-    dplyr::mutate(b_type = "lrr_rp")
+  pfam_df <- condense_pfams(b)
 
-  con_lrr_rk <- x$lrr_rk %>%
-    condense() %>%
-    dplyr::mutate(b_type = "lrr_rk")
+  blast_df <- condense_blasts(b)
 
-  con_non_lrr_rp <- x$non_lrr_rp %>%
-    condense() %>%
-    #dplyr::rename(non_lrr_rp_pfams_hit = pfams_hit, non_lrr_rp_pfams_acc = pfams_acc, non_lrr_rp_pfams_loc = pfams_loc) %>%
-    dplyr::mutate(b_type = "non_lrr_rp")
+  dplyr::left_join(b$classes, b$tm_signal_pep, by=c("seq_name")) %>%
+   dplyr::left_join( pfam_df, by=c("seq_name") ) %>%
+    dplyr::left_join(blast_df, by=c("seq_name"))
 
-  con_non_lrr_rk <- x$non_lrr_rk %>%
-    condense() %>%
-    #dplyr::rename(non_lrr_rp_with_rk_pfams_hit = pfams_hit, non_lrr_rp__with_rk_pfams_acc = pfams_acc, non_lrr_rp__with_pfams_loc = pfams_loc) %>%
-    dplyr::mutate(b_type = "non_lrr_rk")
-
-  con_lrr_rp_rk_ecto <- x$lrr_rp_rk_with_ecto %>%
-    tidyr::unite(hit_coord, .data$hit_from, .data$hit_to, sep="-" ) %>%
-    dplyr::distinct() %>%
-    dplyr::group_by(.data$seq_name) %>%
-    dplyr::summarise(
-      sp_cut_site = .data$cut_site,
-      .data$tm_start,
-      .data$tm_end,
-      pfams_hit = paste0(.data$hit, collapse=";"),
-      pfams_acc = paste0(.data$acc, collapse=";"),
-      pfams_loc = paste0(.data$pfam_coord, collapse=";"),
-      ectos_hit = paste0(.data$ecto, collapse=";"),
-      ectos_coord = paste0(.data$hit_coord, collapse=";")
-
-    ) %>%
-    dplyr::distinct( ) %>%
-    dplyr::ungroup()  %>%
-    dplyr::mutate(b_type = "lrr_rp_rk_with_ecto")
-
-  dplyr::bind_rows(
-    list(
-      con_lrr_rp, con_lrr_rk, con_non_lrr_rp, con_non_lrr_rk, con_lrr_rp_rk_ecto
-    )
-  ) %>%
-    dplyr::distinct()
 }
 
 #' write the annotated receptor sequences to a fasta file
@@ -232,13 +261,10 @@ as.data.frame.buscador <- function(x,...){
 #' @importFrom rlang .data
 write_seqs <- function(b, out_file_path) {
 
-  ninfo <- data.frame(
-    seq_id = as.data.frame(b)$seq_name,
-    b_type = as.data.frame(b)$b_type
-  )
+
   seq_df <- seq_to_df(b)
-  seq_df <- dplyr::left_join(ninfo, seq_df, by="seq_id") %>%
-    dplyr::mutate(seq_id = paste0(.data$seq_id, "|", .data$b_type))
+  seq_df <- dplyr::left_join(b$classes, seq_df, by=c("seq_name" = "seq_id") ) %>%
+    dplyr::mutate(seq_id = paste0(.data$seq_name, "|", .data$group, "|", .data$evidence))
   seqv <- seq_df$sequence
   names(seqv) <- seq_df$seq_id
   sset <- Biostrings::AAStringSet(seqv)
@@ -252,7 +278,7 @@ write_seqs <- function(b, out_file_path) {
 seq_to_df <- function(b){
 
   ids <- stringr::str_split(names(b$aastringset), " ",simplify = TRUE)[,1]
-  data.frame(
+  tibble::tibble(
     seq_id = ids,
     sequence =  as.character(b$aastringset, use.names=FALSE),
     seq_length = Biostrings::width(b$aastringset)
@@ -263,14 +289,15 @@ seq_to_df <- function(b){
 #' for pretty drawing. From a `buscador` search object from `buscar()`
 #'
 #' @param b buscador search object returned from `buscar`
-#' @param which the receptor type to return, one of 'lrr_rp', 'lrr_rk', 'non_lrr_rp', 'non_lrr_rk', 'lrr_rp_ecto'
+#' @param which the receptor type to return, one of
 #' @return dataframe
 #' @export
 #' @importFrom rlang .data
-as.drawProteins <- function(b, which="lrr_rp") {
+as_drawProteins <- function(b, which="LRR-RP") {
 
+  keeps <- dplyr::filter(b$classes, .data$group == which)$seq_name
   seq_df <- seq_to_df(b) %>%
-    dplyr::filter(.data$seq_id %in% b[[which]]$seq_name) %>%
+    dplyr::filter(.data$seq_id %in% keeps) %>%
     dplyr::rename("entryName" = "seq_id", "length"="seq_length" ) %>%
     dplyr::select(.data$entryName, .data$length) %>%
     dplyr::mutate(accession=.data$entryName, taxid=2712, order=1, type="CHAIN", begin=1, end=.data$length, description=which) %>%
@@ -279,18 +306,25 @@ as.drawProteins <- function(b, which="lrr_rp") {
   orders <- 1:length(seq_df$entryName)
   names(orders) <- seq_df$entryName
 
-  tm_df <- b[[which]] %>%
+  tm_df <- dplyr::filter(b$tm_signal_pep, b$tm_signal_pep$seq_name %in% keeps) %>%
     dplyr::rename("entryName"="seq_name", "begin"="tm_start", "end"="tm_end") %>%
     dplyr::distinct() %>%
     dplyr::mutate(accession=.data$entryName, taxid=2712, order=1, type="DOMAIN", length=.data$end-.data$begin, description="transmembrane domain") %>%
     dplyr::select(.data$type, .data$description, .data$begin, .data$end, .data$length, .data$accession, .data$entryName, .data$taxid, .data$order)
 
-  domain_df <- b[[which]] %>%
+
+
+  domain_df <-dplyr::filter(b$pfams, b$pfams$seq_name %in% keeps) %>%
     dplyr::rename("entryName"="seq_name", "begin"="seq_from", "end"="seq_to", "description"="hit") %>%
     dplyr::mutate(accession=.data$entryName, taxid=2712, order=1, type="DOMAIN", length=.data$end-.data$begin)  %>%
     dplyr::select(.data$type, .data$description, .data$begin, .data$end, .data$length, .data$accession, .data$entryName, .data$taxid, .data$order)
 
-  return(dplyr::bind_rows(seq_df, tm_df, domain_df) %>%
+  blast_df <- dplyr::filter(b$blasts, b$blasts$seq_name %in% keeps) %>%
+    dplyr::rename("entryName"="seq_name", "begin"="seq_start", "end"="seq_end", "description"="ecto") %>%
+    dplyr::mutate(accession=.data$entryName, taxid=2712, order=1, type="DOMAIN", length=.data$end-.data$begin)  %>%
+    dplyr::select(.data$type, .data$description, .data$begin, .data$end, .data$length, .data$accession, .data$entryName, .data$taxid, .data$order)
+
+  return(dplyr::bind_rows(seq_df, tm_df, domain_df, blast_df) %>%
            dplyr::mutate(order = orders[.data$entryName])
   )
 
@@ -301,12 +335,12 @@ as.drawProteins <- function(b, which="lrr_rp") {
 #' draw each found proteins of a given receptor type.
 #'
 #' @param b `buscador` search object returned from `buscar()`
-#' @param which the receptor type to return, one of 'lrr_rp', 'lrr_rk', 'non_lrr_rp', 'non_lrr_rk', 'lrr_rp_ecto'
+#' @param which the receptor type to return, one of
 #' @param label_domains write a label on the domain
 #' @return ggplot2
 #' @export
-dibujar <- function(b, which="lrr_rp", label_domains=FALSE) {
-  pd <- as.drawProteins(b, which=which)
+dibujar <- function(b, which="LRR-RP", label_domains=FALSE) {
+  pd <- as_drawProteins(b, which=which)
   drawProteins::draw_canvas(pd) %>%
     drawProteins::draw_chains(pd) %>%
     drawProteins::draw_domains(pd, label_domains = label_domains) +

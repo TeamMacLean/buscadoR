@@ -1,9 +1,3 @@
-#' ecto domain sequences from Arabidopsis for BLAST
-#'
-#' @format Bioconductor DNAStringSet
-#'
-"ecto_dom_seqs"
-
 #' kinase PFAM domains
 #'
 #' @format character vector
@@ -14,7 +8,29 @@
 #' @format character vector
 "lrr_pfams"
 
-#' non lrr pfam domains
+#' other pfam domains
 #'
 #' @format character vector
-"non_lrr_pfams"
+"other_pfams"
+
+
+#' lrr_ecto regions
+#'
+#' @format character vector
+"lrr_ecto"
+
+#' other_ecto regions
+#'
+#' @format character vector
+"other_ecto"
+
+#' unspecified_ecto regions
+#'
+#' @format character vector
+"unspecified_ecto"
+
+
+#' class definition matrix
+#'
+#' @format data.frame
+"class_def_matrix"

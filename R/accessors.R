@@ -1,73 +1,44 @@
-#' get the dataframe of PFAM results from a `buscar` search object from `buscar()`
+#' get the dataframe of ALL PFAM results from a `buscar` search object from `buscar()`
 #'
 #' @param b buscar search object returned from `buscar`
 #' @return dataframe
 #' @export
-hmmer_results <- function(b) {
-  b$hmmer
+pfam_results <- function(b) {
+  b$pfams
 }
 
-#' get the dataframe of deeptmhmm results from a `buscar` search object from `buscar()`
+#' get the dataframe of passing deeptmhmm results from a `buscar` search object from `buscar()`
 #'
 #' @param b buscar search object returned from `buscar`
 #' @return dataframe
 #' @export
 deeptmhmm_results <- function(b) {
-  b$deeptmhmm
+  b$tm_signal_pep
 }
-#' get the dataframe of ecto domain results from a `buscar` search object from `buscar()`
+#' get the dataframe of ALL blast results from a `buscar` search object from `buscar()`
 #'
 #' @param b buscar search object returned from `buscar`
 #' @return dataframe
 #' @export
-ecto_results <- function(b) {
-  b$ecto
+blast_results <- function(b) {
+  b$blasts
 }
 
-#' get the dataframe of lrr_rp results from a `buscar` search object from `buscar()`
+
+#' get the dataframe of classification results from a `buscar` search object from `buscar()`
 #'
 #' @param b buscar search object returned from `buscar`
 #' @return dataframe
 #' @export
-lrr_rp <- function(b) {
-  b$lrr_rp
+groups <- function(b) {
+  b$classes
 }
 
-#' get the dataframe of lrr_rk results from a `buscar` search object from `buscar()`
+#' get the computed classification matrix for the proteins
 #'
-#' @param b buscar search object returned from `buscar`
+#' @param b buscador object
 #' @return dataframe
 #' @export
-lrr_rk <- function(b) {
-  b$lrr_rk
+classification_matrix <- function(b) {
+  b$matrix
 }
-
-#' get the dataframe of non_lrr_rp results from a `buscar` search object from `buscar()`
-#'
-#' @param b buscar search object returned from `buscar`
-#' @return dataframe
-#' @export
-non_lrr_rp <- function(b) {
-  b$non_lrr_rp
-}
-
-#' get the dataframe of non_lrr_rk results from a `buscar` search object from `buscar()`
-#'
-#' @param b buscar search object returned from `buscar`
-#' @return dataframe
-#' @export
-non_lrr_rk <- function(b) {
-  b$non_lrr_rk
-}
-
-#' get the dataframe of lrr_rp_rk_with_ecto results from a `buscar` search object from `buscar()`
-#'
-#' @param b buscar search object returned from `buscar`
-#' @return dataframe
-#' @export
-lrr_rp_rk_with_ecto <- function(b) {
-  b$lrr_rp_rk_with_ecto
-}
-
-
-

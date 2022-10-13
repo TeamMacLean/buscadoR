@@ -64,101 +64,83 @@ A summary table of each type found can be generated
 mesa(b)
 ```
 
-| b_type              | count |
-|:--------------------|------:|
-| lrr_rk              |   196 |
-| lrr_rp              |    66 |
-| lrr_rp_rk_with_ecto |    50 |
-| non_lrr_rk          |   201 |
-| non_lrr_rp          |    64 |
+| group           |   n |
+|:----------------|----:|
+| LRR-RK          | 111 |
+| LRR-RP          |  44 |
+| LRR+OTHER-RK    |  83 |
+| LRR+OTHER-RP    |  23 |
+| OTHER-RK        | 145 |
+| OTHER-RP        |  59 |
+| TM-KINASE       |  11 |
+| TM-PROTEIN      |  12 |
+| unclassified_RK |  12 |
+| unclassified_RP |   3 |
 
 BuscadoR RLK Finding results
 
-A dataframe of one row per receptor protein found (ideal for exporting)
-can be created
+A tibble (dataframe) of one row per receptor protein found (ideal for
+exporting) can be created
 
 ``` r
-as.data.frame(b)
-#> # A tibble: 577 × 10
-#>    seq_name    sp_cut_site tm_start tm_end pfams_hit  pfams_acc pfams_loc b_type
-#>    <chr>             <int>    <int>  <int> <chr>      <chr>     <chr>     <chr> 
-#>  1 AT1G17240.1          44      708    728 LRR_8;LRR… PF13855.… 94-150;1… lrr_rp
-#>  2 AT1G17250.1          50      726    738 LRR_8;LRR… PF13855.… 121-157;… lrr_rp
-#>  3 AT1G25570.1          23      554    574 LRR_4;LRR… PF12799.… 443-460;… lrr_rp
-#>  4 AT1G28340.1          22      550    570 LRR_8;LRR… PF13855.… 426-458;… lrr_rp
-#>  5 AT1G34290.1          26      170    190 LRR_4;LRR… PF12799.… 94-130;7… lrr_rp
-#>  6 AT1G45616.1          29      951    971 LRR_8;LRR… PF13855.… 117-157;… lrr_rp
-#>  7 AT1G58190.2          27      985   1005 LRR_8;LRR… PF13855.… 123-162;… lrr_rp
-#>  8 AT1G65380.1          25      687    707 LRR_8;LRR… PF13855.… 84-133;1… lrr_rp
-#>  9 AT1G69990.1          18      214    234 LRR_8;LRR… PF13855.… 68-101;1… lrr_rp
-#> 10 AT1G71390.1          25      740    760 LRR_8;LRR… PF13855.… 79-114;1… lrr_rp
-#> # … with 567 more rows, and 2 more variables: ectos_hit <chr>,
-#> #   ectos_coord <chr>
+as_tibble(b)
+#> # A tibble: 503 × 11
+#>    seq_name    group       evidence cut_site tm_start tm_end pfams_hit pfams_acc
+#>    <chr>       <chr>       <chr>       <int>    <int>  <int> <chr>     <chr>    
+#>  1 AT1G49730.1 unclassifi… t1             55      285    305 Pkinase;… PF00069.…
+#>  2 AT1G65800.1 LRR+OTHER-… t7             27      440    460 PK_Tyr_S… PF07714.…
+#>  3 AT1G65790.1 OTHER-RK    PFAM           27      436    456 PK_Tyr_S… PF07714.…
+#>  4 AT1G55610.1 LRR-RK      PFAM+BL…       24      777    797 LRR_8;LR… PF13855.…
+#>  5 AT1G10850.1 LRR-RK      PFAM+BL…       32      259    279 Pkinase;… PF00069.…
+#>  6 AT1G70530.1 OTHER-RK    PFAM+BL…       20      261    281 PK_Tyr_S… PF07714.…
+#>  7 AT1G70520.1 OTHER-RK    PFAM+BL…       29      261    281 Pkinase;… PF00069.…
+#>  8 AT1G16260.1 OTHER-RK    PFAM+BL…       23      316    336 PK_Tyr_S… PF07714.…
+#>  9 AT1G17240.1 LRR-RP      PFAM+BL…       44      708    728 LRR_8;LR… PF13855.…
+#> 10 AT1G17230.1 LRR+OTHER-… t6             23      735    755 Pkinase;… PF00069.…
+#> # … with 493 more rows, and 3 more variables: pfams_loc <chr>, blast_hit <chr>,
+#> #   blast_loc <chr>
 ```
-
-A tidy format dataframe of each type of receptor protein can be
-extracted
-
-``` r
-lrr_rp(b)
-#> # A tibble: 3,244 × 14
-#>    seq_name cut_site tm_start tm_end hit   acc     eval seq_from seq_to hit_from
-#>    <chr>       <int>    <int>  <int> <chr> <chr>  <dbl>    <dbl>  <dbl>    <int>
-#>  1 AT1G172…       44      708    728 LRR_8 PF13… 2  e-7       94    150        5
-#>  2 AT1G172…       44      708    728 LRR_8 PF13… 1.5e-6      115    181        2
-#>  3 AT1G172…       44      708    728 LRR_8 PF13… 2.3e-2      171    233        3
-#>  4 AT1G172…       44      708    728 LRR_8 PF13… 4.6e-6      246    305        2
-#>  5 AT1G172…       44      708    728 LRR_8 PF13… 9.6e-5      315    353       23
-#>  6 AT1G172…       44      708    728 LRR_8 PF13… 2.1e-6      362    402       21
-#>  7 AT1G172…       44      708    728 LRR_8 PF13… 1.9e-1      406    450       16
-#>  8 AT1G172…       44      708    728 LRR_8 PF13… 1  e-7      470    529        2
-#>  9 AT1G172…       44      708    728 LRR_8 PF13… 7.5e-7      581    636        6
-#> 10 AT1G172…       44      708    728 LRR_8 PF13… 2.9e-5      602    660        3
-#> # … with 3,234 more rows, and 4 more variables: hit_to <int>, base_acc <chr>,
-#> #   b_type <chr>, pfam_length <dbl>
-```
-
-also `lrr_rk()`, `non_lrr_rp()`, `non_lrr_rk()`, `lrr_rp_rk_with_ecto()`
 
 Raw search results from the databases can be extracted
 
 ``` r
-hmmer_results(b)
-#> # A tibble: 22,890 × 11
-#>    seq_name   hit   acc     eval seq_from seq_to hit_from hit_to base_acc b_type
-#>    <chr>      <chr> <chr>  <dbl>    <dbl>  <dbl>    <int>  <int> <chr>    <chr> 
-#>  1 AT1G17600… LRR_4 PF12… 1.5e-1      607    646        5     42 PF12799  LRR_P…
-#>  2 AT1G17600… LRR_4 PF12… 8.7e-2      626    662        1     35 PF12799  LRR_P…
-#>  3 AT1G17600… LRR_4 PF12… 4  e+0      649    679        1     26 PF12799  LRR_P…
-#>  4 AT1G17600… LRR_4 PF12… 2.4e-4      798    835        3     42 PF12799  LRR_P…
-#>  5 AT1G17600… LRR_4 PF12… 7.2e-4      843    883        2     43 PF12799  LRR_P…
-#>  6 AT1G17600… LRR_4 PF12… 9.9e-3      893    931        3     42 PF12799  LRR_P…
-#>  7 AT1G17600… LRR_4 PF12… 2.4e-3      915    958        1     42 PF12799  LRR_P…
-#>  8 AT1G17600… LRR_3 PF07… 2.5e-8      604    622        1     19 PF07725  LRR_P…
-#>  9 AT1G17600… LRR_8 PF13… 5.6e-3      605    659        3     59 PF13855  LRR_P…
-#> 10 AT1G17600… LRR_8 PF13… 3.5e-6      797    852        2     59 PF13855  LRR_P…
-#> # … with 22,880 more rows, and 1 more variable: pfam_length <dbl>
+pfam_results(b)
+#> # A tibble: 4,831 × 11
+#>    seq_name  hit   acc      eval seq_from seq_to hit_from hit_to base_acc b_type
+#>    <chr>     <chr> <chr>   <dbl>    <dbl>  <dbl>    <int>  <int> <chr>    <chr> 
+#>  1 AT1G1760… LRR_3 PF07… 2.5e- 8      604    622        1     19 PF07725  LRR_P…
+#>  2 AT1G1268… Pkin… PF00… 7.1e-72      107    355        1    264 PF00069  KINAS…
+#>  3 AT1G1268… PK_T… PF07… 2.7e-36      109    348        3    254 PF07714  KINAS…
+#>  4 AT1G1268… Kina… PF14… 1  e- 9      209    343      154    288 PF14531  KINAS…
+#>  5 AT1G1268… ABC1  PF03… 2.6e- 7      173    251      142    219 PF03109  KINAS…
+#>  6 AT1G7345… Pkin… PF00… 1.3e-51      841   1143        1    264 PF00069  KINAS…
+#>  7 AT1G7345… PK_T… PF07… 2.7e-19      843   1051        3    212 PF07714  KINAS…
+#>  8 AT1G0944… Pkin… PF00… 3.7e-50      158    426        2    260 PF00069  KINAS…
+#>  9 AT1G0944… PK_T… PF07… 6.3e-48      159    428        3    259 PF07714  KINAS…
+#> 10 AT1G7346… Pkin… PF00… 1.4e-51      858   1160        1    264 PF00069  KINAS…
+#> # … with 4,821 more rows, and 1 more variable: pfam_length <dbl>
 ```
 
-also `deeptmhmm_results()`, `ecto_results()`
+also `deeptmhmm_results()`, `blast_results()`
 
 Each set of putative proteins can be rendered as a plot
 
 ``` r
-dibujar(b, which = "lrr_rp")
+dibujar(b, which = "TM-PROTEIN")
 ```
 
-<img src="man/figures/README-unnamed-chunk-9-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" />
 
-also use “lrr_rk”, “non_lrr_rp”, “non_lrr_rk”, “lrr_rp_rk_with_ecto”
+also use
+`LRR-RK, LRR-RP, LRR+OTHER-RK, LRR+OTHER-RP, OTHER-RK, OTHER-RP, TM-KINASE, TM-PROTEIN, unclassified_RK, unclassified_RP`
 
 ## Exporting results
 
-A dataframe of one row per receptor protein can be created and written
-out in the usual way
+A tibble (dataframe) of one row per receptor protein can be created and
+written out
 
 ``` r
-res <- as.data.frame(b)
+res <- as_tibble(b)
 readr::write_csv(res, "my_results.csv")
 ```
 
@@ -176,22 +158,29 @@ can be created for further plotting work. Note the plot is a `ggplot2`
 object and can be styled using that package too.
 
 ``` r
-dp <- as.drawProteins(b)
+dp <- as_drawProteins(b)
 ```
 
 The definitions used for the classification can be returned
 
 ``` r
-definiciones(which="lrr_rp")
-#> lrr_rp =
-#>      * A signal peptide according to Phobius.
-#>      * Exactly one Transmembrane Domain according to Phobius.
-#>      * At least one of the `lrr_pfams` according to PFAMscan.
-#>      * The Transmembrane domain should be closer to the C terminal than the end of the pfam hit.
+definiciones()
+#> # A tibble: 64 × 10
+#>    group    evidence   SP    TM    kinase_pfam lrr_pfam other_pfam at_lrr_blast
+#>    <chr>    <chr>      <lgl> <lgl> <lgl>       <lgl>    <lgl>      <lgl>       
+#>  1 LRR-RK   PFAM       TRUE  TRUE  TRUE        TRUE     FALSE      FALSE       
+#>  2 LRR-RK   BLAST      TRUE  TRUE  TRUE        FALSE    FALSE      TRUE        
+#>  3 LRR-RK   PFAM+BLAST TRUE  TRUE  TRUE        TRUE     FALSE      TRUE        
+#>  4 LRR-RP   PFAM       TRUE  TRUE  FALSE       TRUE     FALSE      FALSE       
+#>  5 LRR-RP   BLAST      TRUE  TRUE  FALSE       FALSE    FALSE      TRUE        
+#>  6 LRR-RP   PFAM+BLAST TRUE  TRUE  FALSE       TRUE     FALSE      TRUE        
+#>  7 OTHER-RK PFAM       TRUE  TRUE  TRUE        FALSE    TRUE       FALSE       
+#>  8 OTHER-RK BLAST      TRUE  TRUE  TRUE        FALSE    FALSE      FALSE       
+#>  9 OTHER-RK PFAM+BLAST TRUE  TRUE  TRUE        FALSE    TRUE       FALSE       
+#> 10 OTHER-RP PFAM       TRUE  TRUE  FALSE       FALSE    TRUE       FALSE       
+#> # … with 54 more rows, and 2 more variables: at_other_blast <lgl>,
+#> #   at_unspec_blast <lgl>
 ```
-
-also use “lrr_rk”, “non_lrr_rp”, “non_lrr_rk”, “lrr_rp_rk_with_ecto”,
-“all”
 
 ## Running `buscadoR` searches locally
 

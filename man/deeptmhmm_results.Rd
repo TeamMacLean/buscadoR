@@ -2,7 +2,7 @@
 % Please edit documentation in R/accessors.R
 \name{deeptmhmm_results}
 \alias{deeptmhmm_results}
-\title{get the dataframe of deeptmhmm results from a `buscar` search object from `buscar()`}
+\title{get the dataframe of passing deeptmhmm results from a `buscar` search object from `buscar()`}
 \usage{
 deeptmhmm_results(b)
 }
@@ -13,5 +13,5 @@ deeptmhmm_results(b)
 dataframe
 }
 \description{
-get the dataframe of deeptmhmm results from a `buscar` search object from `buscar()`
+get the dataframe of passing deeptmhmm results from a `buscar` search object from `buscar()`
 }

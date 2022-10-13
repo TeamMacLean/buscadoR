@@ -7,3 +7,8 @@
 ^.*\.fa
 ^.*\.fasta
 ^\.github$
+^.*\.jpg
+^.*\.ipynb
+^.*\.csv
+^.*\.png
+^.*\.RDS

@@ -1,6 +1,7 @@
 #' process raw hmmer result into dataframe
 #'
 #' @param hmmer_raw complete hmmer result
+#' @param pfam_eval pfam cutoff value
 #' @return dataframe
 #' @importFrom rlang .data
 parse_raw_hmmer <- function(hmmer_raw, pfam_eval) {
@@ -20,8 +21,8 @@ parse_raw_hmmer <- function(hmmer_raw, pfam_eval) {
                   seq_to = as.numeric(.data$seq_to),
                   seq_from = as.numeric(.data$seq_from),
                   b_type = dplyr::if_else(.data$base_acc %in% lrr_pfams, "LRR_PFAM",
-                                          dplyr::if_else(.data$base_acc %in% non_lrr_pfams, "NON_LRR_PFAM",
-                                                         dplyr::if_else(.data$base_acc %in% kinase_pfams, "KINASE_PFAM", "Other"))),
+                                          dplyr::if_else(.data$base_acc %in% other_pfams, "OTHER_PFAM",
+                                                         dplyr::if_else(.data$base_acc %in% kinase_pfams, "KINASE_PFAM", "unknown"))),
                   pfam_length = .data$seq_to - .data$seq_from
     ) %>%
     dplyr::distinct()
@@ -32,7 +33,7 @@ parse_raw_hmmer <- function(hmmer_raw, pfam_eval) {
 
 #' process raw deeptmhmm result into basic dataframe
 #'
-#' @param dtm complete deeptmhmm result
+#' @param dtm_raw complete deeptmhmm result
 #' @return dataframe
 #' @importFrom rlang .data
 parse_raw_deeptmhmm <- function(dtm_raw) {
@@ -54,8 +55,8 @@ find_tm_proteins <- function(dtm) {
   dplyr::group_by(.data$seq_name) %>%
     tidyr::nest() %>%
     dplyr::transmute( .data$seq_name,
-      tm_domains = purrr::map_dbl(data, function(x){sum(x$type == "TMhelix")}),
-      signal_peptides = purrr::map_dbl(data, function(x){sum(x$type == "signal") } )
+      tm_domains = purrr::map_dbl(.data$data, function(x){sum(x$type == "TMhelix")}),
+      signal_peptides = purrr::map_dbl(.data$data, function(x){sum(x$type == "signal") } )
       ) %>%
     dplyr::filter(.data$tm_domains == 1, .data$signal_peptides == 1)
 
@@ -66,7 +67,7 @@ find_tm_proteins <- function(dtm) {
 }
 
 #' get filtered deeptmhmm hits
-#' @param dtm parsed deeptmhmm result from `process_raw_deeptmhmm`
+#' @param dtm parsed deeptmhmm result from `parse_raw_deeptmhmm`
 #' @return character vector
 #' @importFrom rlang .data
 process_deeptmhmm <- function(dtm) {
@@ -84,8 +85,8 @@ process_deeptmhmm <- function(dtm) {
     )
   }
 
-  dtm %>% dplyr::filter(seq_name %in% tm_proteins) %>%
-    tidyr::unite(coord, .data$start, .data$end ) %>%
+  dtm %>% dplyr::filter(.data$seq_name %in% tm_proteins) %>%
+    tidyr::unite("coord", .data$start, .data$end ) %>%
     tidyr::pivot_wider(names_from = .data$type, values_from = .data$coord) %>%
     dplyr::select(.data$seq_name, .data$signal, .data$TMhelix) %>%
     tidyr::separate(.data$signal, into = c("sig_start", "cut_site"), convert = TRUE) %>%
@@ -94,17 +95,22 @@ process_deeptmhmm <- function(dtm) {
 }
 
 #' parse blast result file
-#' @param ecto_raw blast result file (`-outfmt 7`)
+#' @param blast_raw blast result file (`-outfmt 6`)
 #' @return dataframe
-parse_raw_ecto <- function(ecto_raw) {
+#' @importFrom rlang .data
+parse_raw_blast <- function(blast_raw) {
 
-  readr::read_tsv(ecto_raw,
+  readr::read_tsv(blast_raw,
                   comment="#",
                   col_names = c("ecto", "seq_name", "percent_id",
                                 "alignment_length", "mismatches", "gap_opens",
                                 "ecto_start", "ecto_end", "seq_start",
                                 "seq_end", "evalue", "bit_score"),
-                  show_col_types = FALSE)
+                  show_col_types = FALSE) %>%
+    dplyr::mutate(b_type = dplyr::if_else(.data$ecto %in% lrr_ecto, "LRR_BLAST",
+                                          dplyr::if_else(.data$ecto %in% other_ecto, "OTHER_BLAST",
+                                                         dplyr::if_else(.data$ecto %in% unspecified_ecto, "UNSPEC_BLAST", "unknown")))) %>%
+    dplyr::filter(.data$percent_id >= 50)
 }
 
 is_empty <- function(fname) {

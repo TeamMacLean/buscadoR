@@ -1,6 +1,6 @@
 Package: buscadoR
 Type: Package
-Title: Combine results from hmmer, deeptmhmm and BLAST into RLK protein predictions. 
+Title: Combine results from hmmer, deeptmhmm and BLAST into RLK protein predictions
 Version: 0.1.2
 Author: Dan MacLean
 Maintainer: Dan MacLean <dan.maclean@tsl.ac.uk>
@@ -17,13 +17,15 @@ Imports:
     ggplot2,
     knitr,
     magrittr,
+    purrr,
     readr,
     rhmmer (>= 0.2.0),
     rlang,
     stringr,
+    tibble,
     tidyr
 RoxygenNote: 7.1.2
-Remotes:  
+Remotes: 
     arendsee/rhmmer
 Depends: 
     R (>= 4.1.0)

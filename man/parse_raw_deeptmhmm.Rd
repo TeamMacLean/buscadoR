@@ -7,7 +7,7 @@
 parse_raw_deeptmhmm(dtm_raw)
 }
 \arguments{
-\item{dtm}{complete deeptmhmm result}
+\item{dtm_raw}{complete deeptmhmm result}
 }
 \value{
 dataframe

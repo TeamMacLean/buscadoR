@@ -4,14 +4,10 @@
 \alias{definiciones}
 \title{report the definitions used for each receptor type}
 \usage{
-definiciones(which = "all")
-}
-\arguments{
-\item{which}{the type to show a definition for; one of
-'all', 'lrr_rp', 'lrr_rk', 'non_lrr_rp', 'non_lrr_rk', 'lrr_rp_ecto'}
+definiciones()
 }
 \value{
-character vector
+dataframe
 }
 \description{
 report the definitions used for each receptor type
