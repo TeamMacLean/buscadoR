@@ -241,7 +241,7 @@ mesa <- function(b){
 #' converts `buscador` search object to a tibble
 #' @param b `buscador` object to coerce
 #' @export
-as_tibble <- function(b){
+to_tibble <- function(b){
 
   pfam_df <- condense_pfams(b)
 

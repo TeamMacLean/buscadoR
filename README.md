@@ -83,7 +83,7 @@ A tibble (dataframe) of one row per receptor protein found (ideal for
 exporting) can be created
 
 ``` r
-as_tibble(b)
+to_tibble(b)
 #> # A tibble: 503 × 11
 #>    seq_name    group       evidence cut_site tm_start tm_end pfams_hit pfams_acc
 #>    <chr>       <chr>       <chr>       <int>    <int>  <int> <chr>     <chr>    
@@ -140,7 +140,7 @@ A tibble (dataframe) of one row per receptor protein can be created and
 written out
 
 ``` r
-res <- as_tibble(b)
+res <- to_tibble(b)
 readr::write_csv(res, "my_results.csv")
 ```
 

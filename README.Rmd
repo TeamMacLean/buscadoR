@@ -76,7 +76,7 @@ mesa(b)
 A tibble (dataframe) of one row per receptor protein found (ideal for exporting) can be created
 
 ```{r}
-as_tibble(b)
+to_tibble(b)
 ```
 
 
@@ -101,7 +101,7 @@ also use `LRR-RK, LRR-RP, LRR+OTHER-RK, LRR+OTHER-RP, OTHER-RK, OTHER-RP, TM-KIN
 A tibble (dataframe) of one row per receptor protein can be created and written out
 
 ```{r, eval=FALSE}
-res <- as_tibble(b)
+res <- to_tibble(b)
 readr::write_csv(res, "my_results.csv")
 ```
 
