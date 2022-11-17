@@ -4,11 +4,13 @@
 #' @param hmmer results file from hmmer --domtblout (as .gz or plain text)
 #' @param blast results file from blastp -outfmt 6 (as. gz or plain text)
 #' @param fasta original fasta file used in searches
+#' @param kinase_pfam_min minimum length of kinase PFAM hit default 100 aa
+#' @param other_blast_min minimum length of OTHER At ecto domain BLAST hits default 50 aa
 #' @param hmmer_eval_cutoff evalue cutoff for hmmer search
 #'
 #' @return busc object
 #' @export
-buscar <- function(deeptmhmm = NULL, hmmer=NULL, blast=NULL, fasta=NULL, hmmer_eval_cutoff = 20) {
+buscar <- function(deeptmhmm = NULL, hmmer=NULL, blast=NULL, fasta=NULL, kinase_pfam_min = 100, other_blast_min = 50,  hmmer_eval_cutoff = 20) {
 
 
 
@@ -35,11 +37,12 @@ buscar <- function(deeptmhmm = NULL, hmmer=NULL, blast=NULL, fasta=NULL, hmmer_e
 #' work out whether a sequence has kinase pfams according to criteria
 #' @param sn vector of sequence names with TM and SP
 #' @param b buscador object
+#' @param kinase_pfam_min minimum length of kinase pfam default 100 aa
 #' @importFrom rlang .data
-has_kinase_pfam <- function(sn, b) {
+has_kinase_pfam <- function(sn, b, kinase_pfam_min) {
   seqs_w_kinase_pfam_after_tm <- dplyr::left_join(b$pfams, b$tm_signal_pep, by = c("seq_name") ) %>%
     dplyr::filter(.data$b_type == "KINASE_PFAM",
-                  .data$pfam_length > 250,
+                  .data$pfam_length >= kinase_pfam_min,
                   .data$seq_from > .data$tm_start)
 
   sn %in% seqs_w_kinase_pfam_after_tm$seq_name
@@ -85,10 +88,12 @@ has_at_lrr_blast <- function(sn, b) {
 #' work out whether a sequence has other blast according to criteria
 #' @param sn vector of sequence names with TM and SP
 #' @param b buscador object
+#' @param other_blast_min minimum length of other BLAST hits default: 50aa
 #' @importFrom rlang .data
 has_at_other_blast <- function(sn, b){
   seqs_w_blast_hit_before_tm <- dplyr::left_join(b$blasts, b$tm_signal_pep, by = c("seq_name")) %>%
     dplyr::filter(.data$b_type == "OTHER_BLAST",
+                  .data$alignment_length >= other_blast_min,
                   .data$seq_end < .data$tm_start)
 
   sn %in% seqs_w_blast_hit_before_tm$seq_name
