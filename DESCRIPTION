@@ -1,7 +1,7 @@
 Package: buscadoR
 Type: Package
 Title: Combine results from hmmer, deeptmhmm and BLAST into RLK protein predictions
-Version: 0.2.1
+Version: 0.2.2
 Author: Dan MacLean
 Maintainer: Dan MacLean <dan.maclean@tsl.ac.uk>
 Description: This package will load results from hmmer, deeptmhmm, and BLAST, parse them and assign to RLK protein classes. 
