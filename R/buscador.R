@@ -25,7 +25,9 @@ buscar <- function(deeptmhmm = NULL, hmmer=NULL, blast=NULL, fasta=NULL, kinase_
       hmmer_file = hmmer,
       blast_file = blast,
       fasta_file=fasta,
-      hmmer_eval_cutoff = hmmer_eval_cutoff
+      hmmer_eval_cutoff = hmmer_eval_cutoff,
+      kinase_pfam_min = kinase_pfam_min,
+      other_blast_min = other_blast_min
     )
 
 
@@ -90,7 +92,7 @@ has_at_lrr_blast <- function(sn, b) {
 #' @param b buscador object
 #' @param other_blast_min minimum length of other BLAST hits default: 50aa
 #' @importFrom rlang .data
-has_at_other_blast <- function(sn, b){
+has_at_other_blast <- function(sn, b, other_blast_min){
   seqs_w_blast_hit_before_tm <- dplyr::left_join(b$blasts, b$tm_signal_pep, by = c("seq_name")) %>%
     dplyr::filter(.data$b_type == "OTHER_BLAST",
                   .data$alignment_length >= other_blast_min,
@@ -131,17 +133,20 @@ classify_protein <- function(b) {
 #' @param blast_file results file from blastp -outfmt 6 (as. gz or plain text)
 #' @param fasta_file original fasta file used in searches
 #' @param hmmer_eval_cutoff evalue cutoff for hmmer search
-#'
+#' @param kinase_pfam_min minimum length of kinase PFAM hit default 100 aa
+#' @param other_blast_min minimum length of OTHER At ecto domain BLAST hits default 50 aa
 #' @return busc object
 #' @importFrom rlang .data
-new_buscador <- function(deeptmhmm_file = NULL, hmmer_file=NULL, blast_file=NULL, fasta_file=NULL, hmmer_eval_cutoff = 20){
+new_buscador <- function(deeptmhmm_file = NULL, hmmer_file=NULL, blast_file=NULL, fasta_file=NULL, hmmer_eval_cutoff = 20, kinase_pfam_min = 100, other_blast_min = 50 ){
 
 
   x <- list(deeptmhmm_file = deeptmhmm_file,
             hmmer_file = hmmer_file,
             blast_file = blast_file,
             fasta_file=fasta_file,
-            hmmer_eval_cutoff = hmmer_eval_cutoff)
+            hmmer_eval_cutoff = hmmer_eval_cutoff,
+            kinase_pfam_min = kinase_pfam_min,
+            other_blast_min = other_blast_min)
 
 
   x[['tm_signal_pep']] <- parse_raw_deeptmhmm(x$deeptmhmm_file ) %>% process_deeptmhmm()
@@ -154,11 +159,11 @@ new_buscador <- function(deeptmhmm_file = NULL, hmmer_file=NULL, blast_file=NULL
                                 SP = TRUE,
                                 TM = TRUE
                                 ) %>%
-    dplyr::mutate(kinase_pfam = has_kinase_pfam(.data$seq_name, x),
+    dplyr::mutate(kinase_pfam = has_kinase_pfam(.data$seq_name, x, kinase_pfam_min),
                   lrr_pfam = has_lrr_pfam(.data$seq_name, x),
                   other_pfam = has_other_pfam(.data$seq_name, x),
                   at_lrr_blast = has_at_lrr_blast(.data$seq_name, x),
-                  at_other_blast = has_at_other_blast(.data$seq_name, x),
+                  at_other_blast = has_at_other_blast(.data$seq_name, x, other_blast_min),
                   at_unspec_blast = has_at_unspec_blast(.data$seq_name, x)
                   )
 
