@@ -51,7 +51,7 @@ deeptmhmm_file <- "deeptmhmm_results.txt.gz"
 blast_file <- "blast_results.txt.gz"
 
 b <- buscar(hmmer = hmmer_file, deeptmhmm = deeptmhmm_file, blast = blast_file, fasta = fasta_file,
-            kinase_pfam_min = 100, other_blast_min = 50)
+            kinase_pfam_min = 100, blast_min = 50)
 ```
 
 ## Examining the results
