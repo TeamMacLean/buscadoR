@@ -5,12 +5,12 @@
 #' @param blast results file from blastp -outfmt 6 (as. gz or plain text)
 #' @param fasta original fasta file used in searches
 #' @param kinase_pfam_min minimum length of kinase PFAM hit default 100 aa
-#' @param other_blast_min minimum length of OTHER At ecto domain BLAST hits default 50 aa
+#' @param blast_min minimum length of OTHER At ecto domain BLAST hits default 50 aa
 #' @param hmmer_eval_cutoff evalue cutoff for hmmer search
 #'
 #' @return busc object
 #' @export
-buscar <- function(deeptmhmm = NULL, hmmer=NULL, blast=NULL, fasta=NULL, kinase_pfam_min = 100, other_blast_min = 50,  hmmer_eval_cutoff = 20) {
+buscar <- function(deeptmhmm = NULL, hmmer=NULL, blast=NULL, fasta=NULL, kinase_pfam_min = 100, blast_min = 50,  hmmer_eval_cutoff = 20) {
 
 
 
@@ -27,7 +27,7 @@ buscar <- function(deeptmhmm = NULL, hmmer=NULL, blast=NULL, fasta=NULL, kinase_
       fasta_file=fasta,
       hmmer_eval_cutoff = hmmer_eval_cutoff,
       kinase_pfam_min = kinase_pfam_min,
-      other_blast_min = other_blast_min
+      blast_min = blast_min
     )
 
 
