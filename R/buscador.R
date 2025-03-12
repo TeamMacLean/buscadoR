@@ -362,6 +362,15 @@ as_drawProteins <- function(b, which="LRR-RP") {
 #' @export
 dibujar <- function(b, which="LRR-RP", label_domains=FALSE) {
   pd <- as_drawProteins(b, which=which)
+
+  if(is.null(pd) || nrow(pd) == 0) {
+    warning(paste0("No proteins of type '", which, "' to draw"))
+    return(ggplot2::ggplot() + ggplot2::theme_void() +
+             ggplot2::annotate("text", x = 0, y = 0,
+                               label = paste0("No proteins of type '", which, "' found")))
+  }
+
+
   drawProteins::draw_canvas(pd) %>%
     drawProteins::draw_chains(pd) %>%
     drawProteins::draw_domains(pd, label_domains = label_domains) +
