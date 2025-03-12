@@ -310,6 +310,13 @@ seq_to_df <- function(b){
 as_drawProteins <- function(b, which="LRR-RP") {
 
   keeps <- dplyr::filter(b$classes, .data$group == which)$seq_name
+
+  # Add this check
+  if(length(keeps) == 0) {
+    warning(paste0("No proteins of type '", which, "' found"))
+    return(NULL) # or return an empty data frame with the right structure
+  }
+
   seq_df <- seq_to_df(b) %>%
     dplyr::filter(.data$seq_id %in% keeps) %>%
     dplyr::rename("entryName" = "seq_id", "length"="seq_length" ) %>%
